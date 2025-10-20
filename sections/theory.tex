@@ -1,0 +1,88 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                       Theory                           - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Theory}
+
+This section introduces the concepts that the middleware relies on. Things like how vector queries are expressed and scoped, why real workloads concentrate on a few "hot" places, and how spatial indexes in PostGIS accelerate predicates yet leave room for complementary caching. The aim is to fix terminology and assumptions so later design and evaluation choices (e.g., H3 cell resolution, cache keys, and freshness policies) can be understood and compared consistently.
+
+\subsection{Conceptual Frame}
+
+\subsubsection{Query Models and Spatial Footprints}
+Vector web services expose two distinct dimensions of query semantics: a \emph{spatial filter} over geometries and an optional \emph{attribute filter} over feature properties. In OGC-style services, the spatial part ranges from coarse bounding boxes (BBOX) to polygonal predicates such as \texttt{Intersects}, \texttt{Within}, or \texttt{Contains}, while the attribute part uses comparison and logical operators (e.g., \texttt{POP\_DENSITY > 5000 AND TYPE = 'residential'}). Filter Encoding (FES) defines how these spatial, comparison, and logical operators are combined into a single query expression, in either XML or ECQL form \cite{OGC_FES}.
+
+We use spatial footprint to denote the minimal geometry that defines the spatial filter as sent by the client (e.g., the BBOX or a user-drawn polygon). For caching theory, the footprint is mapped to a distinct set of spatial buckets (H3 cells) that act as reusable containers. A \emph{spatial response} is the set (or stream) of features matching both filters within the query area, together with any server-side transformations. Reuse then follows two patterns:
+\begin{itemize}
+  \item Full reuse: When a new request's cell set and attribute filter exactly match a cached entry.
+  \item Composed reuse: When the new request spans multiple cached cell entries whose combination can be merged and then filtered.
+\end{itemize}
+
+In both cases, the cache key must encode (layer, cell or cell-set, filter hash, SRID) to preserve identical query meaning with the database result. Freshness is controlled independently via TTL or event-driven invalidation (discussed later), but the scope of what to invalidate remains the same, which is the cells touched by the updated features.
+
+\subsubsection{Hotspots and Workload Skew}
+Interactive map traffic is rarely uniform across space. Request popularity typically follows a heavy-tailed (Zipf-like) distribution, where a small number of locations attract a large fraction of requests, while most locations are cold. This pattern has been observed broadly in networked systems and motivates cache designs that selectively retain popular items. In spatial systems, the same pattern appears as \emph{spatial skew}: urban centres, transport corridors, and touristic areas become hotspots, and the set of hotspots may evolve over time with events and daily cycles \cite{Pan_2017}.
+
+Skew has two practical consequences. First, repeated evaluation of overlapping queries in hotspots can dominate query latency and backend load, even when individual queries are optimized with spatial indexes \cite{Winter2021_GeoBlocks}. Second, any effective cache should be \emph{spatially selective}, meaning that it should spend memory on the small subset of cells where reuse is high, rather than caching uniformly across the entire map. Dividing footprints into H3 cells makes it possible to track per-cell popularity, admit only “hot” cells, and combine results for larger queries without caching redundant geometry everywhere.
+
+\subsection{Spatial Indexing and Partitioning}
+
+\subsubsection{Spatial Indexes in PostGIS}
+PostGIS optimizes spatial queries using GiST-based indexes that implement an R-tree-like search over geometry bounding boxes. The index performs a fast filter step (bounding-box test) to filter out candidates, followed by an exact geometry check (\texttt{ST\_Intersects}, \texttt{ST\_Within}, etc.) on the survivors \cite{PostGIS_Indexing}. Correct use therefore requires both creating the index with \texttt{USING GIST} and using index-aware filters so the planner can apply the filter step. 
+
+While GiST dramatically reduces the cost of single queries and spatial joins, it does not take advantage of \emph{temporal locality} or \emph{overlap reuse}. If many users repeatedly query the same small region, the database still performs planning, index descent, and exact checks for each request; buffers, caches, and prepared geometries help, but they are not keyed by \emph{where} reuse occurs. An external, cell-keyed cache complements GiST by avoiding the entire evaluation pipeline for popular regions. Once a cell’s result is computed, later requests that map to the same (cell, filter) can be answered from memory. In short, GiST reduces the work to find candidates; spatial caching reduces how often the database must do that work at all.
+
+\subsubsection{Grid-Based Bucketing vs. Native Indexing}
+Native database indexing (e.g., GiST-backed R-trees in PostGIS) speeds up single queries by filtering out candidates with a fast bounding-box filter and then applying exact geometry filters to the survivors. This \emph{two-pass} evaluation is highly effective per request, but it does not directly capture \emph{temporal locality} across requests that repeatedly target the same small area: the planner, index descent, and exact checks still run for every query.
+
+An external, grid-based bucketing strategy divides space into fixed cells and uses those cells as cache keys for query answers. In this model, a request's footprint (BBOX or polygon) is mapped to a set of cells; if the (layer, cell-set, filter) tuple is already cached, the middleware composes the response from memory, bypassing the database. Overlapping requests then naturally reuse prior work because they share cells. The database remains responsible for correctness and misses, while the middleware focuses on detecting and serving hotspots. In short, native indexing reduces the amount of work within a query, while grid bucketing reduces how often the database must do that work at all by enabling answer reuse across partially overlapping requests. The two techniques are complementary, GiST handles precise geometry tests and complex joins, while grid bucketing takes advantage of spatial clustering to minimize repeated work in hotspot regions.
+
+\subsubsection{Hexagonal Grids and H3 Basics}
+H3 is a hierarchical discrete global grid that represents locations as 64-bit cell identifiers. The grid is organized in resolutions ranging from 0 to 15, where each cell has exactly one parent at any lower resolution and up to seven children at the next higher resolution; parent/child navigation is provided by API functions such as \texttt{cellToParent} and \texttt{cellToChildren}. Adjacency is based on shared edges; neighborhood and vicinity queries use grid traversal operations (e.g., \texttt{kRing}, \texttt{hexRange}) to list cells within a given graph distance.
+
+At resolution~0, the grid contains 122 base cells (derived from an icosahedral projection); refinements add hexagonal children, with pentagons appearing to maintain topology. These properties (stable adjacency, clean up/down sampling, and compact integer keys) make H3 a practical foundation for bucketing requests and composing answers across neighboring cells in a middleware cache.
+
+\subsubsection{H3 Resolutions and Cell Geometry}
+Cell size decreases exponentially with resolution. Empirically, average hexagon areas are on the order of \SI{5.16}{\kilo\meter\squared} at res~7, \SI{0.737}{\kilo\meter\squared} at res~8, and \SI{0.105}{\kilo\meter\squared} at res~9 (global averages; exact area varies with position relative to the icosahedron). The minimum/maximum area ranges per resolution reflect distortion near icosahedron vertices and the presence of pentagons.
+
+These statistics drive practical trade-offs. Higher resolutions improve cache specificity (higher chance that an incoming query is covered by already-hot cells and less overfetch when composing answers) but increase (i) the number of keys per query, (ii) metadata/memory overhead per cached entry, and (iii) composition cost when merging many cell payloads. Coarser resolutions reduce key churn and memory but risk overestimation (returning many features outside the exact footprint) and lower hit probability for small, detailed queries. Our evaluation therefore sweeps a small set of candidate resolutions and reports hit ratio, composition overhead, and memory per resolution, grounded in the documented cell-area curves.
+
+\subsubsection{Mapping BBoxes/Polygons to Cells}
+
+\subsubsection{Spatial Approximation Limits of H3}
+
+\subsection{Caching Theory for Spatial Workloads}
+
+\subsubsection{Caching Objectives and Cost Model}
+
+\subsubsection{Key Design for Spatial Queries}
+
+\subsubsection{Admission and Replacement}
+
+\subsubsection{TTL-Based Freshness Control}
+
+\subsubsection{Event-Driven Invalidation}
+
+\subsection{Consistency and Freshness Semantics}
+
+\subsubsection{Definitions: Consistency, Coherence, and Staleness}
+
+\subsubsection{Spatial Validity Scopes}
+
+\subsubsection{Combining TTL with Event-Driven Updates}
+
+\subsubsection{Delivery Semantics and Ordering}
+
+\subsection{Performance and Latency Modeling}
+
+\subsubsection{End-to-End Latency Decomposition}
+
+\subsubsection{Queueing Basics and Little’s Law}
+
+\subsubsection{Tail Latency and Percentiles}
+
+\subsubsection{Hit Ratio vs. Latency/Throughput Trade-off}
+
+\subsubsection{Granularity vs. Memory Cost (H3 Resolution)}
+
+\subsubsection{Workload Skew and Hotspot Dynamics}
+
+\subsubsection{Golden Signals and Cache Metrics}

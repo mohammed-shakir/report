@@ -1,0 +1,135 @@
+\documentclass[a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{csquotes}
+\usepackage[backend=biber,style=numeric]{biblatex}
+\usepackage{hyperref}
+\usepackage[nameinlink,capitalise]{cleveref}
+\usepackage{caption}
+\usepackage{verbatim}
+\usepackage{titlesec}
+\hypersetup{
+    pdftitle={Adaptive Caching of Spatial Queries in PostGIS Using H3-Based Indexing},
+    pdfauthor={Mohammed Shakir},
+    pdfsubject={Master Thesis},
+    pdfkeywords={master thesis, PostGIS, spatial queries, H3, caching, indexing},
+    linkcolor=MidnightBlue,
+    citecolor=RoyalBlue,
+    urlcolor=RoyalBlue
+}
+\sisetup{
+  output-decimal-marker = {.},
+  range-phrase          = --,
+  range-units           = single,
+  exponent-product      = \cdot
+}
+% References
+\addbibresource{references.bib}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                         Title                          - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Adaptive Caching of Spatial Queries in PostGIS Using H3-Based Indexing} 
+\author{
+    {Mohammed Shakir} \\
+    \texttt{mohsha-0@student.ltu.se} \\
+    {Department of Computer Science, Electrical and Space Engineering} \\
+    \\ 
+    \includegraphics[width=0.2\textwidth]{figures/ltu_swe.jpg}
+    }
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty} 
+
+\newpage
+\pagenumbering{roman}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                        Abstract                        - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{sections/abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                    Acknowledgements                    - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{sections/acknowledgements}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                   Table of contents                    - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                Abbreviations & Acronyms                - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{sections/acronyms}
+
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                    Introduction                        - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{sections/introduction}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                    Related Work                        - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{sections/related_work}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                       Theory                           - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{sections/theory}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                       Method                           - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{sections/method}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                       Results                          - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{sections/results}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                      Discussion                        - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{sections/discussion}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                      Conclusions                       - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\input{sections/conclusions}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -                       References                       - %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\printbibliography[heading=bibintoc,title={References}]
+
+\end{document}

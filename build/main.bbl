@@ -1,0 +1,859 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global/global}
+    \entry{Drapier2024_H3}{article}{}{}
+      \name{author}{3}{}{%
+        {{hash=428521eaef75d7340f4dc97994a71b7f}{%
+           family={Drapier},
+           familyi={D\bibinitperiod},
+           given={Nicolas},
+           giveni={N\bibinitperiod}}}%
+        {{hash=aa72a3a2cdfcc762837fe6fdd287ca40}{%
+           family={Chetouani},
+           familyi={C\bibinitperiod},
+           given={Aladine},
+           giveni={A\bibinitperiod}}}%
+        {{hash=166e761397d82a2383683c5df846ffff}{%
+           family={Chateigner},
+           familyi={C\bibinitperiod},
+           given={Aurélien},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {arXiv}%
+      }
+      \strng{namehash}{eb62b28d88dc1a84dce63b78b6560d5d}
+      \strng{fullhash}{eb62b28d88dc1a84dce63b78b6560d5d}
+      \strng{fullhashraw}{eb62b28d88dc1a84dce63b78b6560d5d}
+      \strng{bibnamehash}{eb62b28d88dc1a84dce63b78b6560d5d}
+      \strng{authorbibnamehash}{eb62b28d88dc1a84dce63b78b6560d5d}
+      \strng{authornamehash}{eb62b28d88dc1a84dce63b78b6560d5d}
+      \strng{authorfullhash}{eb62b28d88dc1a84dce63b78b6560d5d}
+      \strng{authorfullhashraw}{eb62b28d88dc1a84dce63b78b6560d5d}
+      \field{sortinit}{D}
+      \field{sortinithash}{6f385f66841fb5e82009dc833c761848}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Transactions on Machine Learning Research}
+      \field{title}{Enhancing Maritime Trajectory Forecasting via H3 Index and Causal Language Modelling (CLM)}
+      \field{year}{2024}
+      \verb{doi}
+      \verb 10.48550/ARXIV.2405.09596
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/2405.09596
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/2405.09596
+      \endverb
+      \keyw{Machine Learning (cs.LG),Artificial Intelligence (cs.AI),Methodology (stat.ME),FOS: Computer and information sciences,FOS: Computer and information sciences}
+    \endentry
+    \entry{GeoServer_GeoWebCache_TileCaching}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=be4970ae52ebd88684ceaedd725c7e0d}{%
+           family={{GeoSolutions}},
+           familyi={G\bibinitperiod}}}%
+      }
+      \strng{namehash}{be4970ae52ebd88684ceaedd725c7e0d}
+      \strng{fullhash}{be4970ae52ebd88684ceaedd725c7e0d}
+      \strng{fullhashraw}{be4970ae52ebd88684ceaedd725c7e0d}
+      \strng{bibnamehash}{be4970ae52ebd88684ceaedd725c7e0d}
+      \strng{authorbibnamehash}{be4970ae52ebd88684ceaedd725c7e0d}
+      \strng{authornamehash}{be4970ae52ebd88684ceaedd725c7e0d}
+      \strng{authorfullhash}{be4970ae52ebd88684ceaedd725c7e0d}
+      \strng{authorfullhashraw}{be4970ae52ebd88684ceaedd725c7e0d}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{GeoServer Training (official documentation)}
+      \field{title}{Tile Caching with GeoWebCache}
+      \field{year}{2020}
+      \verb{urlraw}
+      \verb https://docs.geoserver.geo-solutions.it/edu/en/enterprise/gwc.html
+      \endverb
+      \verb{url}
+      \verb https://docs.geoserver.geo-solutions.it/edu/en/enterprise/gwc.html
+      \endverb
+    \endentry
+    \entry{Kipf2020_ACT}{misc}{}{}
+      \name{author}{10}{}{%
+        {{hash=94293341059461a171f82aa64e17384d}{%
+           family={Kipf},
+           familyi={K\bibinitperiod},
+           given={Andreas},
+           giveni={A\bibinitperiod}}}%
+        {{hash=7f9877eeb34a378847999acc5bec46cf}{%
+           family={Lang},
+           familyi={L\bibinitperiod},
+           given={Harald},
+           giveni={H\bibinitperiod}}}%
+        {{hash=83e12908cef569c81629d02e35c46511}{%
+           family={Pandey},
+           familyi={P\bibinitperiod},
+           given={Varun},
+           giveni={V\bibinitperiod}}}%
+        {{hash=9f487e4ffe39f5ad6ea3611c3f6f1b0d}{%
+           family={Persa},
+           familyi={P\bibinitperiod},
+           given={Raul\bibnamedelima Alexandru},
+           giveni={R\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
+        {{hash=f2e4bbc04da01cf89f129077446e8faa}{%
+           family={Anneser},
+           familyi={A\bibinitperiod},
+           given={Christoph},
+           giveni={C\bibinitperiod}}}%
+        {{hash=5b5305d7a7254694ccebdc6415819305}{%
+           family={Zacharatou},
+           familyi={Z\bibinitperiod},
+           given={Eleni\bibnamedelima Tzirita},
+           giveni={E\bibinitperiod\bibinitdelim T\bibinitperiod}}}%
+        {{hash=1eb15b5effdc2eecd1ef25593aedce21}{%
+           family={Doraiswamy},
+           familyi={D\bibinitperiod},
+           given={Harish},
+           giveni={H\bibinitperiod}}}%
+        {{hash=9a9b1ccfbe3e81e38a1c1136ca101f64}{%
+           family={Boncz},
+           familyi={B\bibinitperiod},
+           given={Peter},
+           giveni={P\bibinitperiod}}}%
+        {{hash=856106a72d787bcea4281fca718cd7d7}{%
+           family={Neumann},
+           familyi={N\bibinitperiod},
+           given={Thomas},
+           giveni={T\bibinitperiod}}}%
+        {{hash=2466c24cd22361559679d58bb1d8da60}{%
+           family={Kemper},
+           familyi={K\bibinitperiod},
+           given={Alfons},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {en}%
+      }
+      \list{publisher}{1}{%
+        {OpenProceedings.org}%
+      }
+      \strng{namehash}{a1ebe5bb4975c80a871c307bc71b6a3d}
+      \strng{fullhash}{bd34cf502f4b6718be5f4f9a39a636ca}
+      \strng{fullhashraw}{bd34cf502f4b6718be5f4f9a39a636ca}
+      \strng{bibnamehash}{a1ebe5bb4975c80a871c307bc71b6a3d}
+      \strng{authorbibnamehash}{a1ebe5bb4975c80a871c307bc71b6a3d}
+      \strng{authornamehash}{a1ebe5bb4975c80a871c307bc71b6a3d}
+      \strng{authorfullhash}{bd34cf502f4b6718be5f4f9a39a636ca}
+      \strng{authorfullhashraw}{bd34cf502f4b6718be5f4f9a39a636ca}
+      \field{sortinit}{K}
+      \field{sortinithash}{c02bf6bff1c488450c352b40f5d853ab}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Adaptive Main-Memory Indexing for High-Performance Point-Polygon Joins}
+      \field{year}{2020}
+      \verb{doi}
+      \verb 10.5441/002/EDBT.2020.31
+      \endverb
+      \verb{urlraw}
+      \verb https://openproceedings.org/2020/conf/edbt/paper_190.pdf
+      \endverb
+      \verb{url}
+      \verb https://openproceedings.org/2020/conf/edbt/paper_190.pdf
+      \endverb
+      \keyw{Database Technology}
+    \endentry
+    \entry{Lins2013_Nanocubes}{article}{}{}
+      \name{author}{3}{}{%
+        {{hash=933fee18f6d7f2f0e55e320db9ae997b}{%
+           family={Lins},
+           familyi={L\bibinitperiod},
+           given={Lauro},
+           giveni={L\bibinitperiod}}}%
+        {{hash=16d16142dd6e490aecdedb601b76d62c}{%
+           family={Klosowski},
+           familyi={K\bibinitperiod},
+           given={James\bibnamedelima T.},
+           giveni={J\bibinitperiod\bibinitdelim T\bibinitperiod}}}%
+        {{hash=de216a4cef9daa2d1fce563e8b498941}{%
+           family={Scheidegger},
+           familyi={S\bibinitperiod},
+           given={Carlos},
+           giveni={C\bibinitperiod}}}%
+      }
+      \list{publisher}{2}{%
+        {Institute of Electrical}%
+        {Electronics Engineers (IEEE)}%
+      }
+      \strng{namehash}{479e53e43da366d1170f31d39a567bb1}
+      \strng{fullhash}{479e53e43da366d1170f31d39a567bb1}
+      \strng{fullhashraw}{479e53e43da366d1170f31d39a567bb1}
+      \strng{bibnamehash}{479e53e43da366d1170f31d39a567bb1}
+      \strng{authorbibnamehash}{479e53e43da366d1170f31d39a567bb1}
+      \strng{authornamehash}{479e53e43da366d1170f31d39a567bb1}
+      \strng{authorfullhash}{479e53e43da366d1170f31d39a567bb1}
+      \strng{authorfullhashraw}{479e53e43da366d1170f31d39a567bb1}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{1077-2626}
+      \field{journaltitle}{IEEE Transactions on Visualization and Computer Graphics}
+      \field{month}{12}
+      \field{number}{12}
+      \field{title}{Nanocubes for Real-Time Exploration of Spatiotemporal Datasets}
+      \field{volume}{19}
+      \field{year}{2013}
+      \field{pages}{2456\bibrangedash 2465}
+      \range{pages}{10}
+      \verb{doi}
+      \verb 10.1109/tvcg.2013.179
+      \endverb
+      \verb{urlraw}
+      \verb http://dx.doi.org/10.1109/TVCG.2013.179
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1109/TVCG.2013.179
+      \endverb
+    \endentry
+    \entry{Liu2013_SAC}{inproceedings}{}{}
+      \name{author}{3}{}{%
+        {{hash=9d9ac6815e27331ba6620def723e357f}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Chang},
+           giveni={C\bibinitperiod}}}%
+        {{hash=9e38e3bed4944982e2d6b87f87d4c8d1}{%
+           family={Fruin},
+           familyi={F\bibinitperiod},
+           given={Brendan\bibnamedelima C.},
+           giveni={B\bibinitperiod\bibinitdelim C\bibinitperiod}}}%
+        {{hash=78da52600a4b819c3df311320ebf2a24}{%
+           family={Samet},
+           familyi={S\bibinitperiod},
+           given={Hanan},
+           giveni={H\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {ACM}%
+      }
+      \strng{namehash}{4c3bb8c5ccde84273d8229513b9948ef}
+      \strng{fullhash}{4c3bb8c5ccde84273d8229513b9948ef}
+      \strng{fullhashraw}{4c3bb8c5ccde84273d8229513b9948ef}
+      \strng{bibnamehash}{4c3bb8c5ccde84273d8229513b9948ef}
+      \strng{authorbibnamehash}{4c3bb8c5ccde84273d8229513b9948ef}
+      \strng{authornamehash}{4c3bb8c5ccde84273d8229513b9948ef}
+      \strng{authorfullhash}{4c3bb8c5ccde84273d8229513b9948ef}
+      \strng{authorfullhashraw}{4c3bb8c5ccde84273d8229513b9948ef}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 21st ACM SIGSPATIAL International Conference on Advances in Geographic Information Systems}
+      \field{month}{11}
+      \field{series}{SIGSPATIAL’13}
+      \field{title}{SAC: semantic adaptive caching for spatial mobile applications}
+      \field{year}{2013}
+      \field{pages}{174\bibrangedash 183}
+      \range{pages}{10}
+      \verb{doi}
+      \verb 10.1145/2525314.2525366
+      \endverb
+      \verb{urlraw}
+      \verb http://dx.doi.org/10.1145/2525314.2525366
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1145/2525314.2525366
+      \endverb
+    \endentry
+    \entry{Manica2005_LDSCM}{inproceedings}{}{}
+      \name{author}{3}{}{%
+        {{hash=1b3b88de77fd558fbc75f8bffc52a9d2}{%
+           family={Manica},
+           familyi={M\bibinitperiod},
+           given={Heloíse},
+           giveni={H\bibinitperiod}}}%
+        {{hash=91c25acc172b66b95922b2813c0f8d69}{%
+           family={Dantas},
+           familyi={D\bibinitperiod},
+           given={M.\bibnamedelimi A.\bibnamedelimi R.},
+           giveni={M\bibinitperiod\bibinitdelim A\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+        {{hash=e8a87077d8ce201e625009c535bfef6e}{%
+           family={Camargo},
+           familyi={C\bibinitperiod},
+           given={Murilo\bibnamedelima S.},
+           giveni={M\bibinitperiod\bibinitdelim S\bibinitperiod},
+           prefix={de},
+           prefixi={d\bibinitperiod}}}%
+      }
+      \list{publisher}{3}{%
+        {SciTePress - Science}%
+        {}%
+        {Technology Publications}%
+      }
+      \strng{namehash}{489ab185d5de3783e06fa449c2de2bb9}
+      \strng{fullhash}{489ab185d5de3783e06fa449c2de2bb9}
+      \strng{fullhashraw}{489ab185d5de3783e06fa449c2de2bb9}
+      \strng{bibnamehash}{489ab185d5de3783e06fa449c2de2bb9}
+      \strng{authorbibnamehash}{489ab185d5de3783e06fa449c2de2bb9}
+      \strng{authornamehash}{489ab185d5de3783e06fa449c2de2bb9}
+      \strng{authorfullhash}{489ab185d5de3783e06fa449c2de2bb9}
+      \strng{authorfullhashraw}{489ab185d5de3783e06fa449c2de2bb9}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the Seventh International Conference on Enterprise Information Systems}
+      \field{title}{An Architecture for Location‐Dependent Semantic Cache Management}
+      \field{year}{2005}
+      \field{pages}{320\bibrangedash 325}
+      \range{pages}{6}
+      \verb{doi}
+      \verb 10.5220/0002524903200325
+      \endverb
+      \verb{urlraw}
+      \verb http://dx.doi.org/10.5220/0002524903200325
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.5220/0002524903200325
+      \endverb
+    \endentry
+    \entry{Maroulis2024_MinMaxCache}{article}{}{}
+      \name{author}{4}{}{%
+        {{hash=c9932d60bcf907323610469c21abed12}{%
+           family={Maroulis},
+           familyi={M\bibinitperiod},
+           given={Stavros},
+           giveni={S\bibinitperiod}}}%
+        {{hash=ba376ec649109a0f62266ffafa60bc0a}{%
+           family={Stamatopoulos},
+           familyi={S\bibinitperiod},
+           given={Vassilis},
+           giveni={V\bibinitperiod}}}%
+        {{hash=2a27e9bb02f9a07410cf3837863136fd}{%
+           family={Papastefanatos},
+           familyi={P\bibinitperiod},
+           given={George},
+           giveni={G\bibinitperiod}}}%
+        {{hash=91d1c75a11be747b5e0d1bfbadea6ed9}{%
+           family={Terrovitis},
+           familyi={T\bibinitperiod},
+           given={Manolis},
+           giveni={M\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computing Machinery (ACM)}%
+      }
+      \strng{namehash}{05382ce30db3026c95781c327d7cf109}
+      \strng{fullhash}{8c37d5c966f503ea69d2ebf679847bb2}
+      \strng{fullhashraw}{8c37d5c966f503ea69d2ebf679847bb2}
+      \strng{bibnamehash}{05382ce30db3026c95781c327d7cf109}
+      \strng{authorbibnamehash}{05382ce30db3026c95781c327d7cf109}
+      \strng{authornamehash}{05382ce30db3026c95781c327d7cf109}
+      \strng{authorfullhash}{8c37d5c966f503ea69d2ebf679847bb2}
+      \strng{authorfullhashraw}{8c37d5c966f503ea69d2ebf679847bb2}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{2150-8097}
+      \field{journaltitle}{Proceedings of the VLDB Endowment}
+      \field{month}{4}
+      \field{number}{8}
+      \field{title}{Visualization-Aware Time Series Min-Max Caching with Error Bound Guarantees}
+      \field{volume}{17}
+      \field{year}{2024}
+      \field{pages}{2091\bibrangedash 2103}
+      \range{pages}{13}
+      \verb{doi}
+      \verb 10.14778/3659437.3659460
+      \endverb
+      \verb{urlraw}
+      \verb http://dx.doi.org/10.14778/3659437.3659460
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.14778/3659437.3659460
+      \endverb
+    \endentry
+    \entry{Mitra2019_STASH}{inproceedings}{}{}
+      \name{author}{4}{}{%
+        {{hash=ee9a8d2c0727e790c69f29e508264084}{%
+           family={Mitra},
+           familyi={M\bibinitperiod},
+           given={Saptashwa},
+           giveni={S\bibinitperiod}}}%
+        {{hash=269fefcc80d20a2ac68fb1bef1a4b5e1}{%
+           family={Khandelwal},
+           familyi={K\bibinitperiod},
+           given={Paahuni},
+           giveni={P\bibinitperiod}}}%
+        {{hash=53c3130ddcf223fc47100e46a33ce0b5}{%
+           family={Pallickara},
+           familyi={P\bibinitperiod},
+           given={Shrideep},
+           giveni={S\bibinitperiod}}}%
+        {{hash=b1e8bb3aeb5b288e4492d4c0b5e3afd8}{%
+           family={Pallickara},
+           familyi={P\bibinitperiod},
+           given={Sangmi\bibnamedelima Lee},
+           giveni={S\bibinitperiod\bibinitdelim L\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {IEEE}%
+      }
+      \strng{namehash}{8d37c4cf0e069e1699c477c2e9c1361a}
+      \strng{fullhash}{e567820888ecc4734045ecf0373e177c}
+      \strng{fullhashraw}{e567820888ecc4734045ecf0373e177c}
+      \strng{bibnamehash}{8d37c4cf0e069e1699c477c2e9c1361a}
+      \strng{authorbibnamehash}{8d37c4cf0e069e1699c477c2e9c1361a}
+      \strng{authornamehash}{8d37c4cf0e069e1699c477c2e9c1361a}
+      \strng{authorfullhash}{e567820888ecc4734045ecf0373e177c}
+      \strng{authorfullhashraw}{e567820888ecc4734045ecf0373e177c}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{2019 IEEE International Conference on Cluster Computing (CLUSTER)}
+      \field{month}{9}
+      \field{title}{STASH: Fast Hierarchical Aggregation Queries for Effective Visual Spatiotemporal Explorations}
+      \field{year}{2019}
+      \field{pages}{1\bibrangedash 11}
+      \range{pages}{11}
+      \verb{doi}
+      \verb 10.1109/cluster.2019.8891029
+      \endverb
+      \verb{urlraw}
+      \verb http://dx.doi.org/10.1109/CLUSTER.2019.8891029
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1109/CLUSTER.2019.8891029
+      \endverb
+    \endentry
+    \entry{OGC_FES}{report}{}{}
+      \name{author}{1}{}{%
+        {{hash=0d6591561c9a387f01e4b0d59426abc6}{%
+           family={{Open Geospatial Consortium}},
+           familyi={O\bibinitperiod}}}%
+      }
+      \list{institution}{1}{%
+        {Open Geospatial Consortium}%
+      }
+      \strng{namehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{fullhash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{fullhashraw}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{bibnamehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authorbibnamehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authornamehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authorfullhash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authorfullhashraw}{0d6591561c9a387f01e4b0d59426abc6}
+      \field{extraname}{1}
+      \field{sortinit}{O}
+      \field{sortinithash}{2cd7140a07aea5341f9e2771efe90aae}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://portal.ogc.org/files/?artifact_id=39968}}
+      \field{note}{Version 2.0, Accessed: 2025-09-28}
+      \field{number}{OGC 09-026r2}
+      \field{title}{OGC Filter Encoding 2.0 Encoding Standard}
+      \field{type}{techreport}
+      \field{year}{2011}
+    \endentry
+    \entry{OGC_WFS}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=0d6591561c9a387f01e4b0d59426abc6}{%
+           family={{Open Geospatial Consortium}},
+           familyi={O\bibinitperiod}}}%
+      }
+      \strng{namehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{fullhash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{fullhashraw}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{bibnamehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authorbibnamehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authornamehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authorfullhash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authorfullhashraw}{0d6591561c9a387f01e4b0d59426abc6}
+      \field{extraname}{2}
+      \field{sortinit}{O}
+      \field{sortinithash}{2cd7140a07aea5341f9e2771efe90aae}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://www.ogc.org/standards/wfs/}}
+      \field{note}{Accessed: 2025-09-28}
+      \field{title}{Web Feature Service (WFS) Standard}
+      \field{year}{2025}
+    \endentry
+    \entry{OGC_WMTS}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=0d6591561c9a387f01e4b0d59426abc6}{%
+           family={{Open Geospatial Consortium}},
+           familyi={O\bibinitperiod}}}%
+      }
+      \strng{namehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{fullhash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{fullhashraw}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{bibnamehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authorbibnamehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authornamehash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authorfullhash}{0d6591561c9a387f01e4b0d59426abc6}
+      \strng{authorfullhashraw}{0d6591561c9a387f01e4b0d59426abc6}
+      \field{extraname}{3}
+      \field{sortinit}{O}
+      \field{sortinithash}{2cd7140a07aea5341f9e2771efe90aae}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://www.ogc.org/standards/wmts/}}
+      \field{note}{Accessed: 2025-09-28}
+      \field{title}{Web Map Tile Service (WMTS) Standard}
+      \field{year}{2025}
+    \endentry
+    \entry{Pan_2017}{article}{}{}
+      \name{author}{4}{}{%
+        {{hash=3daae6058d5b42a64299252fbe6ff44e}{%
+           family={Pan},
+           familyi={P\bibinitperiod},
+           given={Shaoming},
+           giveni={S\bibinitperiod}}}%
+        {{hash=8eb4538a7d6921534b56d073cfc4ee8f}{%
+           family={Chong},
+           familyi={C\bibinitperiod},
+           given={Yanwen},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=df428416bb33b1ea50cc8131fd7dd043}{%
+           family={Zhang},
+           familyi={Z\bibinitperiod},
+           given={Hang},
+           giveni={H\bibinitperiod}}}%
+        {{hash=e22af2a4e10c2e1b24106da533e5da33}{%
+           family={Tan},
+           familyi={T\bibinitperiod},
+           given={Xicheng},
+           giveni={X\bibinitperiod}}}%
+      }
+      \name{editor}{1}{}{%
+        {{hash=c09ffce8bcc845c548836c3433b8701b}{%
+           family={Song},
+           familyi={S\bibinitperiod},
+           given={Houbing},
+           giveni={H\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Public Library of Science (PLoS)}%
+      }
+      \strng{namehash}{e4778993c44bbdbea58c05d1f339fa4a}
+      \strng{fullhash}{bf9005fa2c60d542b13b02a4f7ee77c2}
+      \strng{fullhashraw}{bf9005fa2c60d542b13b02a4f7ee77c2}
+      \strng{bibnamehash}{e4778993c44bbdbea58c05d1f339fa4a}
+      \strng{authorbibnamehash}{e4778993c44bbdbea58c05d1f339fa4a}
+      \strng{authornamehash}{e4778993c44bbdbea58c05d1f339fa4a}
+      \strng{authorfullhash}{bf9005fa2c60d542b13b02a4f7ee77c2}
+      \strng{authorfullhashraw}{bf9005fa2c60d542b13b02a4f7ee77c2}
+      \strng{editorbibnamehash}{c09ffce8bcc845c548836c3433b8701b}
+      \strng{editornamehash}{c09ffce8bcc845c548836c3433b8701b}
+      \strng{editorfullhash}{c09ffce8bcc845c548836c3433b8701b}
+      \strng{editorfullhashraw}{c09ffce8bcc845c548836c3433b8701b}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{1932-6203}
+      \field{journaltitle}{PLOS ONE}
+      \field{month}{1}
+      \field{number}{1}
+      \field{title}{A Global User-Driven Model for Tile Prefetching in Web Geographical Information Systems}
+      \field{volume}{12}
+      \field{year}{2017}
+      \field{pages}{e0170195}
+      \range{pages}{-1}
+      \verb{doi}
+      \verb 10.1371/journal.pone.0170195
+      \endverb
+      \verb{urlraw}
+      \verb http://dx.doi.org/10.1371/journal.pone.0170195
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1371/journal.pone.0170195
+      \endverb
+    \endentry
+    \entry{Papadias2001_aRtree}{inbook}{}{}
+      \name{author}{4}{}{%
+        {{hash=8c7ec302f789ee34303d642c5f699964}{%
+           family={Papadias},
+           familyi={P\bibinitperiod},
+           given={Dimitris},
+           giveni={D\bibinitperiod}}}%
+        {{hash=cfeddfb4f7ceacfc0fb41b0b7e7574b9}{%
+           family={Kalnis},
+           familyi={K\bibinitperiod},
+           given={Panos},
+           giveni={P\bibinitperiod}}}%
+        {{hash=c085572f860d99d03a37c331ee13ff68}{%
+           family={Zhang},
+           familyi={Z\bibinitperiod},
+           given={Jun},
+           giveni={J\bibinitperiod}}}%
+        {{hash=9c46d7d056c4ba627d0e0bf20c04012f}{%
+           family={Tao},
+           familyi={T\bibinitperiod},
+           given={Yufei},
+           giveni={Y\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Springer Berlin Heidelberg}%
+      }
+      \strng{namehash}{b0fd12755490ead5ec12f65e55f3e94d}
+      \strng{fullhash}{9cad7f757ae9a6c4d1490bef12b0e3b1}
+      \strng{fullhashraw}{9cad7f757ae9a6c4d1490bef12b0e3b1}
+      \strng{bibnamehash}{b0fd12755490ead5ec12f65e55f3e94d}
+      \strng{authorbibnamehash}{b0fd12755490ead5ec12f65e55f3e94d}
+      \strng{authornamehash}{b0fd12755490ead5ec12f65e55f3e94d}
+      \strng{authorfullhash}{9cad7f757ae9a6c4d1490bef12b0e3b1}
+      \strng{authorfullhashraw}{9cad7f757ae9a6c4d1490bef12b0e3b1}
+      \field{sortinit}{P}
+      \field{sortinithash}{ff3bcf24f47321b42cb156c2cc8a8422}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Advances in Spatial and Temporal Databases}
+      \field{isbn}{9783540477242}
+      \field{issn}{0302-9743}
+      \field{title}{Efficient OLAP Operations in Spatial Data Warehouses}
+      \field{year}{2001}
+      \field{pages}{443\bibrangedash 459}
+      \range{pages}{17}
+      \verb{doi}
+      \verb 10.1007/3-540-47724-1_23
+      \endverb
+      \verb{urlraw}
+      \verb http://dx.doi.org/10.1007/3-540-47724-1_23
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1007/3-540-47724-1_23
+      \endverb
+    \endentry
+    \entry{PostGIS_Indexing}{misc}{}{}
+      \name{author}{3}{}{%
+        {{hash=da545cfdabdb3af30e84becc024bb262}{%
+           family={Ramsey},
+           familyi={R\bibinitperiod},
+           given={Paul},
+           giveni={P\bibinitperiod}}}%
+        {{hash=92755be20a0d26f07820d1203ec30817}{%
+           family={Leslie},
+           familyi={L\bibinitperiod},
+           given={Mark},
+           giveni={M\bibinitperiod}}}%
+        {{hash=936d9965795c71df8e75a57dba1bfaf6}{%
+           family={contributors},
+           familyi={c\bibinitperiod},
+           given={PostGIS},
+           giveni={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{ab0043a3b61824e239c322dfd0a55b56}
+      \strng{fullhash}{ab0043a3b61824e239c322dfd0a55b56}
+      \strng{fullhashraw}{ab0043a3b61824e239c322dfd0a55b56}
+      \strng{bibnamehash}{ab0043a3b61824e239c322dfd0a55b56}
+      \strng{authorbibnamehash}{ab0043a3b61824e239c322dfd0a55b56}
+      \strng{authornamehash}{ab0043a3b61824e239c322dfd0a55b56}
+      \strng{authorfullhash}{ab0043a3b61824e239c322dfd0a55b56}
+      \strng{authorfullhashraw}{ab0043a3b61824e239c322dfd0a55b56}
+      \field{sortinit}{R}
+      \field{sortinithash}{5e1c39a9d46ffb6bebd8f801023a9486}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://postgis.net/workshops/postgis-intro/indexing.html}}
+      \field{note}{Accessed: 2025-09-29}
+      \field{title}{Spatial Indexing — Introduction to PostGIS}
+      \field{year}{2012--2023}
+    \endentry
+    \entry{H3docs}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=96c92d1ca220c8f275b5dcbc7d8e5f53}{%
+           family={{Uber Technologies, Inc.}},
+           familyi={U\bibinitperiod}}}%
+      }
+      \strng{namehash}{96c92d1ca220c8f275b5dcbc7d8e5f53}
+      \strng{fullhash}{96c92d1ca220c8f275b5dcbc7d8e5f53}
+      \strng{fullhashraw}{96c92d1ca220c8f275b5dcbc7d8e5f53}
+      \strng{bibnamehash}{96c92d1ca220c8f275b5dcbc7d8e5f53}
+      \strng{authorbibnamehash}{96c92d1ca220c8f275b5dcbc7d8e5f53}
+      \strng{authornamehash}{96c92d1ca220c8f275b5dcbc7d8e5f53}
+      \strng{authorfullhash}{96c92d1ca220c8f275b5dcbc7d8e5f53}
+      \strng{authorfullhashraw}{96c92d1ca220c8f275b5dcbc7d8e5f53}
+      \field{sortinit}{U}
+      \field{sortinithash}{6901a00e45705986ee5e7ca9fd39adca}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://h3geo.org/docs/}}
+      \field{note}{Accessed: 2025-09-29}
+      \field{title}{H3: A Hexagonal Hierarchical Spatial Index}
+      \field{year}{2025}
+    \endentry
+    \entry{Wang2018_Vecstra}{inproceedings}{}{}
+      \name{author}{1}{}{%
+        {{hash=ede44c869d7ecc37b5cd4ec67f2c50a3}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Yiwen},
+           giveni={Y\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {CEUR Workshop Proceedings}%
+      }
+      \strng{namehash}{ede44c869d7ecc37b5cd4ec67f2c50a3}
+      \strng{fullhash}{ede44c869d7ecc37b5cd4ec67f2c50a3}
+      \strng{fullhashraw}{ede44c869d7ecc37b5cd4ec67f2c50a3}
+      \strng{bibnamehash}{ede44c869d7ecc37b5cd4ec67f2c50a3}
+      \strng{authorbibnamehash}{ede44c869d7ecc37b5cd4ec67f2c50a3}
+      \strng{authornamehash}{ede44c869d7ecc37b5cd4ec67f2c50a3}
+      \strng{authorfullhash}{ede44c869d7ecc37b5cd4ec67f2c50a3}
+      \strng{authorfullhashraw}{ede44c869d7ecc37b5cd4ec67f2c50a3}
+      \field{sortinit}{W}
+      \field{sortinithash}{4315d78024d0cea9b57a0c6f0e35ed0d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the VLDB 2018 Ph.D. Workshop, August 27, 2018, Rio de Janeiro, Brazil}
+      \field{title}{Vecstra: An Efficient and Scalable Geo-spatial In-Memory Cache}
+      \field{year}{2018}
+      \verb{urlraw}
+      \verb https://ceur-ws.org/Vol-2175/paper06.pdf
+      \endverb
+      \verb{url}
+      \verb https://ceur-ws.org/Vol-2175/paper06.pdf
+      \endverb
+    \endentry
+    \entry{Winter2021_GeoBlocks}{inproceedings}{}{}
+      \name{author}{6}{}{%
+        {{hash=82666a7b6a5d5600e14d96575caae5e5}{%
+           family={Winter},
+           familyi={W\bibinitperiod},
+           given={Christian},
+           giveni={C\bibinitperiod}}}%
+        {{hash=94293341059461a171f82aa64e17384d}{%
+           family={Kipf},
+           familyi={K\bibinitperiod},
+           given={Andreas},
+           giveni={A\bibinitperiod}}}%
+        {{hash=f2e4bbc04da01cf89f129077446e8faa}{%
+           family={Anneser},
+           familyi={A\bibinitperiod},
+           given={Christoph},
+           giveni={C\bibinitperiod}}}%
+        {{hash=5b5305d7a7254694ccebdc6415819305}{%
+           family={Zacharatou},
+           familyi={Z\bibinitperiod},
+           given={Eleni\bibnamedelima Tzirita},
+           giveni={E\bibinitperiod\bibinitdelim T\bibinitperiod}}}%
+        {{hash=856106a72d787bcea4281fca718cd7d7}{%
+           family={Neumann},
+           familyi={N\bibinitperiod},
+           given={Thomas},
+           giveni={T\bibinitperiod}}}%
+        {{hash=2466c24cd22361559679d58bb1d8da60}{%
+           family={Kemper},
+           familyi={K\bibinitperiod},
+           given={Alfons},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{language}{1}{%
+        {en}%
+      }
+      \list{publisher}{1}{%
+        {OpenProceedings.org}%
+      }
+      \strng{namehash}{0a51bb24f9e87f2215465b1bba25992e}
+      \strng{fullhash}{55557e83151df8336fc64655d0043ad1}
+      \strng{fullhashraw}{55557e83151df8336fc64655d0043ad1}
+      \strng{bibnamehash}{0a51bb24f9e87f2215465b1bba25992e}
+      \strng{authorbibnamehash}{0a51bb24f9e87f2215465b1bba25992e}
+      \strng{authornamehash}{0a51bb24f9e87f2215465b1bba25992e}
+      \strng{authorfullhash}{55557e83151df8336fc64655d0043ad1}
+      \strng{authorfullhashraw}{55557e83151df8336fc64655d0043ad1}
+      \field{sortinit}{W}
+      \field{sortinithash}{4315d78024d0cea9b57a0c6f0e35ed0d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 24th International Conference on Extending Database Technology (EDBT)}
+      \field{title}{GeoBlocks: A Query-Cache Accelerated Data Structure for Spatial Aggregation over Polygons}
+      \field{year}{2021}
+      \verb{doi}
+      \verb 10.5441/002/EDBT.2021.16
+      \endverb
+      \verb{urlraw}
+      \verb https://openproceedings.org/2021/conf/edbt/p78.pdf
+      \endverb
+      \verb{url}
+      \verb https://openproceedings.org/2021/conf/edbt/p78.pdf
+      \endverb
+      \keyw{Database Technology}
+    \endentry
+    \entry{Xu2003_TKDE_LocationInvalidation}{article}{}{}
+      \name{author}{3}{}{%
+        {{hash=0f46108f4e01b40f002ec14c6dfe3cf0}{%
+           family={Xu},
+           familyi={X\bibinitperiod},
+           given={Jianliang},
+           giveni={J\bibinitperiod}}}%
+        {{hash=738e581f24bea3197d5f14cf3aae1143}{%
+           family={Tang},
+           familyi={T\bibinitperiod},
+           given={Xueyan},
+           giveni={X\bibinitperiod}}}%
+        {{hash=1b6c9eeb75cadc51cb7d46468107b086}{%
+           family={Lee},
+           familyi={L\bibinitperiod},
+           given={Dik\bibnamedelima Lun},
+           giveni={D\bibinitperiod\bibinitdelim L\bibinitperiod}}}%
+      }
+      \list{publisher}{2}{%
+        {Institute of Electrical}%
+        {Electronics Engineers (IEEE)}%
+      }
+      \strng{namehash}{b65f001ab2edd06ef1bc4666a4d13ed3}
+      \strng{fullhash}{b65f001ab2edd06ef1bc4666a4d13ed3}
+      \strng{fullhashraw}{b65f001ab2edd06ef1bc4666a4d13ed3}
+      \strng{bibnamehash}{b65f001ab2edd06ef1bc4666a4d13ed3}
+      \strng{authorbibnamehash}{b65f001ab2edd06ef1bc4666a4d13ed3}
+      \strng{authornamehash}{b65f001ab2edd06ef1bc4666a4d13ed3}
+      \strng{authorfullhash}{b65f001ab2edd06ef1bc4666a4d13ed3}
+      \strng{authorfullhashraw}{b65f001ab2edd06ef1bc4666a4d13ed3}
+      \field{sortinit}{X}
+      \field{sortinithash}{1965c258adceecf23ce3d67b05113442}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{1041-4347}
+      \field{journaltitle}{IEEE Transactions on Knowledge and Data Engineering}
+      \field{month}{3}
+      \field{number}{2}
+      \field{title}{Performance analysis of location-dependent cache invalidation schemes for mobile environments}
+      \field{volume}{15}
+      \field{year}{2003}
+      \field{pages}{474\bibrangedash 488}
+      \range{pages}{15}
+      \verb{doi}
+      \verb 10.1109/tkde.2003.1185846
+      \endverb
+      \verb{urlraw}
+      \verb http://dx.doi.org/10.1109/TKDE.2003.1185846
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1109/TKDE.2003.1185846
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
