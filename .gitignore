@@ -1,0 +1,21 @@
+# latexmk / TeX artifacts
+build/
+*.aux
+*.bbl
+*.blg
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+
+# minted cache and TikZ externalized figs
+_minted*
+tikz-external/
+
