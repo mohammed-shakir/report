@@ -58,14 +58,55 @@ Request footprints are deterministically converted into H3 cell sets. A rectangu
 Boundary effects must be handled carefully. Because containment is centroid-based, a thin polygon may exclude edge-touching cells whose centers lie just outside; on the other hand, low resolution cells can over-cover the footprint. We address these issues by: choosing a resolution appropriate with the query's spatial granularity, optionally expanding the boundary by a 1-ring and clipping results to the original geometry, and always reapplying the original attribute/spatial filter when combining cached cells to avoid false positives. For multipolygons and holes, we pass the outer ring and interior rings to the region function so that coverage excludes holes and unconnected islands are handled correctly. Neighboring cells are included only when an explicit buffer around the footprint is needed for later rendering or prefetch operations \cite{H3_API_Traversal}.
 
 \subsubsection{Spatial Approximation Limits of H3}
+Converting continuous geometries into hexagonal cells introduces approximation error that must be accounted for in design and evaluation \cite{OGC_API_Features}. First, \emph{centroid-based coverage} in common \texttt{polygonToCells}/\texttt{polyfill} routines only includes cells whose centres fall inside the polygon \cite{H3_API_Regions}; thin corridors or sliver-like shapes near boundaries can therefore be under-covered unless the resolution is increased or a slight expansion step is added. Second, the H3 grid is constructed on an icosahedral projection, which gives small but systematic \emph{edge misalignments} and area variation across the globe, cells near certain icosahedron features deviate more from equal-area assumptions \cite{H3_Core_ResTable}, and reconstructed boundaries from cell sets may appear slightly jagged compared to the original geometry. Third, \emph{pentagon distortion} creates uncommon neighbourhoods where rings/ranges have special handling, algorithms that rely on uniform six-neighbour topology can fail or require slower fallback paths around pentagons \cite{H3_API_Traversal}.
+
+Practical mitigations used in this thesis are:
+\begin{itemize}
+  \item Choose resolution appropriate with the query footprint.
+  \item Optionally expand by a 1-ring at the target resolution and trim server-side.
+  \item Always reapply the exact PostGIS spatial condition on composed results.
+  \item Treat cells touching pentagon distortion zones with caution in experiments.
+\end{itemize}
+
+Together, these measures bound the approximation error while preserving most of the performance benefit of cell-based reuse.
 
 \subsection{Caching Theory for Spatial Workloads}
 
 \subsubsection{Caching Objectives and Cost Model}
+We define the cache objective in terms of latency and backend offload. Let $H$ be the cache hit ratio for a given configuration (resolution, admission, replacement). Let $L_\mathrm{hit}$ be the end-to-end latency on a hit (middleware lookup + composition + optional post-filter), and $L_\mathrm{miss}$ the latency on a miss (database + network + rendering). The expected latency is
+\[
+\mathbb{E}[L] = H\,L_\mathrm{hit} + (1-H)\,L_\mathrm{miss}.
+\]
+Similarly, we model backend work (e.g., CPU/IO in PostGIS) with per-request costs $B_\mathrm{hit}$ and $B_\mathrm{miss}$ (typically $B_\mathrm{hit}\!\ll\!B_\mathrm{miss}$), giving
+\[
+\mathbb{E}[B] = H\,B_\mathrm{hit} + (1-H)\,B_\mathrm{miss}.
+\]
+A simple scalar objective is a weighted sum
+\[
+J = \alpha\,\mathbb{E}[L] + \beta\,\mathbb{E}[B] + \gamma\,S,
+\]
+where $S$ measures staleness risk (e.g., fraction of responses older than a freshness target) and $(\alpha,\beta,\gamma)$ reflect deployment priorities. In practice we also report tail latency (P95/P99), because heavy-tailed request sizes and composition can make percentiles diverge from the mean \cite{Dean_2013}. Under this model, policies are compared by how they trade hit ratio and composition overhead against memory footprint, while respecting a freshness bound set by TTL and event-driven invalidation.
 
 \subsubsection{Key Design for Spatial Queries}
+Cache keys determine reuse granularity and isolation. We use a composite key that captures all the information needed to guarantee matches with a database answer:
+\[
+\texttt{key} = \texttt{<layer>}:\texttt{<srid>}:\texttt{<resolution>}:\texttt{<cellId>}:\texttt{<filterHash>}:\texttt{<version>}.
+\]
+Here \texttt{layer} identifies the dataset; \texttt{srid} fixes the coordinate space; \texttt{resolution}/\texttt{cellId} identify the H3 bucket; \texttt{filterHash} fingerprints the attribute condition (normalised ECQL/FES); and \texttt{version} encodes schema/data epoch for bulk invalidation. Multi-cell requests are handled by fetching the per-cell entries and composing them, then reapplying the original predicate to avoid overfetch extra features.
+
+This per-cell design avoids a large number of unique keys for complex polygons, improves reuse because nearby cells often appear in many queries, and allows targeted invalidation when upstream changes touch only a subset of cells. Larger “query keys” (entire cell-sets) can be layered on top as an optimisation for extremely frequent, identical windows, but the base unit of reuse remains the single cell.
 
 \subsubsection{Admission and Replacement}
+Because spatial workloads are uneven, the cache should prioritise cells that stay popular over time while avoiding constant swapping. We use a hotness-based admission rule: each cell keeps a fading frequency counter, and new items are stored only if recent access passes a set limit or if they replace a clearly less active item already in the cache. Lightweight frequency estimators (for example, TinyLFU-style) give small, memory-efficient estimates that work well when access follows a Zipf-like pattern.
+
+For replacement, both how recent and how frequent accesses are considered to protect cells that are either short-term spikes or long-term hotspots. In practice, an ARC-style split between recent and frequent lists adapts to changing traffic patterns \cite{ARC}, while the admission rule prevents one-time scans from filling up the cache. Spatial details include:
+\begin{itemize}
+  \item Group removal: when memory becomes limited, remove clusters of nearby, cold cells at the same resolution to avoid uneven gaps.
+  \item Resolution aware fallback: before removing many small, high-detail cells, try combining them into a larger cell if it still provides good reuse.
+  \item Ghost records (metadata only): that remember removed cells to guide future admission choices \cite{ARC}.
+\end{itemize}
+
+These methods keep the active cache focused on real hotspots and help the hit rate stay steady even when demand patterns change.
 
 \subsubsection{TTL-Based Freshness Control}
 
