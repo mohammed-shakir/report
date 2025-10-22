@@ -10,7 +10,7 @@ This section introduces the concepts that the middleware relies on. Things like 
 \subsubsection{Query Models and Spatial Footprints}
 Vector web services expose two distinct dimensions of query semantics: a \emph{spatial filter} over geometries and an optional \emph{attribute filter} over feature properties. In OGC-style services, the spatial part ranges from coarse bounding boxes (BBOX) to polygonal predicates such as \texttt{Intersects}, \texttt{Within}, or \texttt{Contains}, while the attribute part uses comparison and logical operators (e.g., \texttt{POP\_DENSITY > 5000 AND TYPE = 'residential'}). Filter Encoding (FES) defines how these spatial, comparison, and logical operators are combined into a single query expression, in either XML or ECQL form \cite{OGC_FES}.
 
-We use spatial footprint to denote the minimal geometry that defines the spatial filter as sent by the client (e.g., the BBOX or a user-drawn polygon). For caching theory, the footprint is mapped to a distinct set of spatial buckets (H3 cells) that act as reusable containers. A \emph{spatial response} is the set (or stream) of features matching both filters within the query area, together with any server-side transformations. Reuse then follows two patterns:
+Spatial footprint is used to denote the minimal geometry that defines the spatial filter as sent by the client (e.g., the BBOX or a user-drawn polygon). For caching theory, the footprint is mapped to a distinct set of spatial buckets (H3 cells) that act as reusable containers. A \emph{spatial response} is the set (or stream) of features matching both filters within the query area, together with any server-side transformations. Reuse then follows two patterns:
 \begin{itemize}
   \item Full reuse: When a new request's cell set and attribute filter exactly match a cached entry.
   \item Composed reuse: When the new request spans multiple cached cell entries whose combination can be merged and then filtered.
@@ -53,9 +53,9 @@ These values give practical trade-offs. Higher resolutions improve cache specifi
 Lower resolutions reduce key churn and memory but risk overestimation (returning many features outside the exact footprint) and lower hit probability for small, detailed queries. The evaluation therefore evaluates a small set of candidate resolutions and reports hit ratio, composition overhead, and memory per resolution, based on documented cell-area curves.
 
 \subsubsection{Mapping BBoxes/Polygons to Cells}
-Request footprints are deterministically converted into H3 cell sets. A rectangular BBOX is treated as a four-vertex polygon, while custom polygons are accepted as-is. The conversion uses H3's region functions: given a polygon and a target resolution, return the set of cell IDs whose centroids lie inside the polygon \cite{H3_API_Regions}. This centroid-containment rule is explicit in both the H3 reference and in SQL integrations. The inverse operation reconstructs polygon outlines from a set of cells, which we use for debugging and visualization \cite{H3_Py_Polygon_Tutorial}.
+Request footprints are deterministically converted into H3 cell sets. A rectangular BBOX is treated as a four-vertex polygon, while custom polygons are accepted as-is. The conversion uses H3's region functions: given a polygon and a target resolution, return the set of cell IDs whose centroids lie inside the polygon \cite{H3_API_Regions}. This centroid-containment rule is explicit in both the H3 reference and in SQL integrations. The inverse operation reconstructs polygon outlines from a set of cells, which is used for debugging and visualization \cite{H3_Py_Polygon_Tutorial}.
 
-Boundary effects must be handled carefully. Because containment is centroid-based, a thin polygon may exclude edge-touching cells whose centers lie just outside; on the other hand, low resolution cells can over-cover the footprint. We address these issues by: choosing a resolution appropriate with the query's spatial granularity, optionally expanding the boundary by a 1-ring and clipping results to the original geometry, and always reapplying the original attribute/spatial filter when combining cached cells to avoid false positives. For multipolygons and holes, we pass the outer ring and interior rings to the region function so that coverage excludes holes and unconnected islands are handled correctly. Neighboring cells are included only when an explicit buffer around the footprint is needed for later rendering or prefetch operations \cite{H3_API_Traversal}.
+Boundary effects must be handled carefully. Because containment is centroid-based, a thin polygon may exclude edge-touching cells whose centers lie just outside; on the other hand, low resolution cells can over-cover the footprint. These issues are addressed by: choosing a resolution appropriate with the query's spatial granularity, optionally expanding the boundary by a 1-ring and clipping results to the original geometry, and always reapplying the original attribute/spatial filter when combining cached cells to avoid false positives. For multipolygons and holes, the outer ring and interior rings are passed to the region function so that coverage excludes holes and unconnected islands are handled correctly. Neighboring cells are included only when an explicit buffer around the footprint is needed for later rendering or prefetch operations \cite{H3_API_Traversal}.
 
 \subsubsection{Spatial Approximation Limits of H3}
 Converting continuous geometries into hexagonal cells introduces approximation error that must be accounted for in design and evaluation \cite{OGC_API_Features}. First, \emph{centroid-based coverage} in common \texttt{polygonToCells}/\texttt{polyfill} routines only includes cells whose centres fall inside the polygon \cite{H3_API_Regions}; thin corridors or sliver-like shapes near boundaries can therefore be under-covered unless the resolution is increased or a slight expansion step is added. Second, the H3 grid is constructed on an icosahedral projection, which gives small but systematic \emph{edge misalignments} and area variation across the globe, cells near certain icosahedron features deviate more from equal-area assumptions \cite{H3_Core_ResTable}, and reconstructed boundaries from cell sets may appear slightly jagged compared to the original geometry. Third, \emph{pentagon distortion} creates uncommon neighbourhoods where rings/ranges have special handling, algorithms that rely on uniform six-neighbour topology can fail or require slower fallback paths around pentagons \cite{H3_API_Traversal}.
@@ -73,11 +73,11 @@ Together, these measures bound the approximation error while preserving most of 
 \subsection{Caching Theory for Spatial Workloads}
 
 \subsubsection{Caching Objectives and Cost Model}
-We define the cache objective in terms of latency and backend offload. Let $H$ be the cache hit ratio for a given configuration (resolution, admission, replacement). Let $L_\mathrm{hit}$ be the end-to-end latency on a hit (middleware lookup + composition + optional post-filter), and $L_\mathrm{miss}$ the latency on a miss (database + network + rendering). The expected latency is
+The cache objective are defined in terms of latency and backend offload. Let $H$ be the cache hit ratio for a given configuration (resolution, admission, replacement). Let $L_\mathrm{hit}$ be the end-to-end latency on a hit (middleware lookup + composition + optional post-filter), and $L_\mathrm{miss}$ the latency on a miss (database + network + rendering). The expected latency is
 \[
 \mathbb{E}[L] = H\,L_\mathrm{hit} + (1-H)\,L_\mathrm{miss}.
 \]
-Similarly, we model backend work (e.g., CPU/IO in PostGIS) with per-request costs $B_\mathrm{hit}$ and $B_\mathrm{miss}$ (typically $B_\mathrm{hit}\!\ll\!B_\mathrm{miss}$), giving
+Similarly, the backend work (e.g., CPU/IO in PostGIS) is modeled with per-request costs $B_\mathrm{hit}$ and $B_\mathrm{miss}$ (typically $B_\mathrm{hit}\!\ll\!B_\mathrm{miss}$), giving
 \[
 \mathbb{E}[B] = H\,B_\mathrm{hit} + (1-H)\,B_\mathrm{miss}.
 \]
@@ -85,10 +85,10 @@ A simple scalar objective is a weighted sum
 \[
 J = \alpha\,\mathbb{E}[L] + \beta\,\mathbb{E}[B] + \gamma\,S,
 \]
-where $S$ measures staleness risk (e.g., fraction of responses older than a freshness target) and $(\alpha,\beta,\gamma)$ reflect deployment priorities. In practice we also report tail latency (P95/P99), because heavy-tailed request sizes and composition can make percentiles diverge from the mean \cite{Dean_2013}. Under this model, policies are compared by how they trade hit ratio and composition overhead against memory footprint, while respecting a freshness bound set by TTL and event-driven invalidation.
+where $S$ measures staleness risk (e.g., fraction of responses older than a freshness target) and $(\alpha,\beta,\gamma)$ reflect deployment priorities. In practice the tail latency (P95/P99) is also reported, because heavy-tailed request sizes and composition can make percentiles diverge from the mean \cite{Dean_2013}. Under this model, policies are compared by how they trade hit ratio and composition overhead against memory footprint, while respecting a freshness bound set by TTL and event-driven invalidation.
 
 \subsubsection{Key Design for Spatial Queries}
-Cache keys determine reuse granularity and isolation. We use a composite key that captures all the information needed to guarantee matches with a database answer:
+Cache keys determine reuse granularity and isolation. A composite key that captures all the information needed is used to guarantee matches with a database answer:
 \[
 \texttt{key} = \texttt{<layer>}:\texttt{<srid>}:\texttt{<resolution>}:\texttt{<cellId>}:\texttt{<filterHash>}:\texttt{<version>}.
 \]
@@ -97,7 +97,7 @@ Here \texttt{layer} identifies the dataset; \texttt{srid} fixes the coordinate s
 This per-cell design avoids a large number of unique keys for complex polygons, improves reuse because nearby cells often appear in many queries, and allows targeted invalidation when upstream changes touch only a subset of cells. Larger “query keys” (entire cell-sets) can be layered on top as an optimisation for extremely frequent, identical windows, but the base unit of reuse remains the single cell.
 
 \subsubsection{Admission and Replacement}
-Because spatial workloads are uneven, the cache should prioritise cells that stay popular over time while avoiding constant swapping. We use a hotness-based admission rule: each cell keeps a fading frequency counter, and new items are stored only if recent access passes a set limit or if they replace a clearly less active item already in the cache. Lightweight frequency estimators (for example, TinyLFU-style) give small, memory-efficient estimates that work well when access follows a Zipf-like pattern.
+Because spatial workloads are uneven, the cache should prioritise cells that stay popular over time while avoiding constant swapping. A hotness-based admission rule is used: each cell keeps a fading frequency counter, and new items are stored only if recent access passes a set limit or if they replace a clearly less active item already in the cache. Lightweight frequency estimators (for example, TinyLFU-style) give small, memory-efficient estimates that work well when access follows a Zipf-like pattern.
 
 For replacement, both how recent and how frequent accesses are considered to protect cells that are either short-term spikes or long-term hotspots. In practice, an ARC-style split between recent and frequent lists adapts to changing traffic patterns \cite{ARC}, while the admission rule prevents one-time scans from filling up the cache. Spatial details include:
 \begin{itemize}
@@ -109,31 +109,109 @@ For replacement, both how recent and how frequent accesses are considered to pro
 These methods keep the active cache focused on real hotspots and help the hit rate stay steady even when demand patterns change.
 
 \subsubsection{TTL-Based Freshness Control}
+A time-to-live (TTL) sets an upper bound on how long a cached cell may be reused without revalidation. TTL approximates the HTTP idea of a \emph{freshness lifetime}: a response is \emph{fresh} while its age is below the configured lifetime and \emph{stale} after that. In the middleware, each Redis entry stores its own TTL, and expiration is handled by Redis through active/idle checks and lazy deletion on access. Let $\tau$ be the TTL and assume upstream edits arrive as a Poisson process with rate $\lambda$ for a given cell. Then the probability that a cached answer is stale at access time is $P_{\text{stale}} = 1-e^{-\lambda \tau}$ \cite{PishroNik_PoissonProcess_Basics}, which makes the $\lambda\tau$ product a practical tuning knob, where larger $\tau$ increases hit ratio but also the risk of staleness.
+
+Per-layer defaults is used and adaptive TTLs are allowed, where lower $\tau$ is used for frequently updated layers (e.g., work orders), and higher $\tau$ for slowly changing layers (e.g., base maps). To cap worst-case staleness, clients can request \emph{fresh} responses by bypassing the cache or forcing revalidation. Finally, TTL interacts with event-driven invalidation, so any update event that maps to a cell immediately removes or refreshes the entry, regardless of remaining TTL (see next subsection).
 
 \subsubsection{Event-Driven Invalidation}
+TTL alone cannot guarantee up-to-date data for regions that change often. As a result, the system subscribes to change-data-capture (CDC) streams from PostgreSQL via Debezium, which tails the database WAL and sends an event per \texttt{INSERT}/\texttt{UPDATE}/\texttt{DELETE} to Kafka topics \cite{Debezium_Postgres}. Each event carries table/row identifiers and changed columns, when geometries change, the middleware computes the affected H3 cells and invalidates the corresponding cache keys. This gives near-real-time consistency for updated features while avoiding global cache purges.
+
+Because streaming systems provide ordering only within a partition, events are partitioned by stable identifiers (e.g., feature ID) so that all changes for the same feature arrive in order \cite{Kafka_Docs}; across features, out-of-order delivery is acceptable because invalidation is repeat-safe. Repeat-safe logic is implemented with a per-key \emph{version/epoch} based on the source commit LSN; invalidating the same cell twice is safe, and late events with older LSNs are ignored \cite{Debezium_RedHat_Postgres}. Delivery guarantees are at-least-once by default, so when needed, Kafka's repeat-safe producers/transactions enable exactly-once processing in consumers \cite{Confluent_Delivery}, though with higher operational cost. In practice, at-least-once plus repeat-safe, versioned invalidation is sufficient, duplicates cause extra (harmless) removes, while misses get repopulated on next access.
 
 \subsection{Consistency and Freshness Semantics}
 
 \subsubsection{Definitions: Consistency, Coherence, and Staleness}
+\emph{Coherence} is a single-object property: all replicas of the same cached item eventually agree on the most recent value; in other words, two readers of the same key do not see conflicting versions once updates have spread \cite{Nagarajan_2020}. \emph{Consistency} refers to multi-object and temporal guarantees, e.g., whether reads reflect a globally ordered history of writes. Strong models such as linearizability make each operation appear atomic in real time \cite{Herlihy_1990}, whereas weaker models (e.g., eventual consistency) allow temporary differences \cite{Vogels_2009}. Our middleware targets \emph{bounded staleness} rather than full linearizability: bound limited in time using TTL, and shorten it with event-driven invalidation.
+
+\emph{Staleness} measures how “out of date” a cache response is relative to the origin. A response becomes \emph{stale} once its age exceeds its freshness lifetime. Staleness is reported as a fraction of responses served beyond their freshness targets, and policies are preferred that keep this fraction below a layer-specific threshold while still delivering high hit ratios.
 
 \subsubsection{Spatial Validity Scopes}
+In spatial workloads, every cached entry has to carry an explicit validity \emph{scope}. Each value is bounded to the H3 cell (or cell-set) used as its key, an update is relevant if and only if the updated geometry intersects that scope. This mirrors prior work on location-dependent caching, where invalidation combines temporal and spatial conditions to avoid discarding unrelated data. Formally, let $V(k)$ be the validity polygon of key $k$ (the cell footprint), and let $\Delta$ be the geometry delta from an update event, and invalidate $k$ when $V(k)\cap \Delta \neq \varnothing$.
+
+Two edge cases matter in practice. First, boundary cells: to reduce false negatives due to discretization, we can expand the scope by a one-ring buffer at the chosen resolution and still reapply the exact PostGIS filter at compose time. Second, multi-cell requests: scopes compose as unions; invalidation touches only the intersecting cells, keeping cache content for unaffected neighbors. Together with TTL, these spatial scopes limit cache clearing and keep popular regions updated without emptying the entire cache.
 
 \subsubsection{Combining TTL with Event-Driven Updates}
+A hybrid freshness strategy combines a \emph{time-to-live} (TTL) with \emph{event-driven} invalidation so that cached entries are reused aggressively yet replaced quickly when underlying data change. TTL provides a deterministic upper bound on age: a value is \emph{fresh} while its age $<\tau$ and \emph{stale} after that \cite{RFC9111_HTTP_Caching}. Event-driven invalidation reacts to specific updates (e.g., CDC messages) by removing or refreshing only the keys whose spatial scopes intersect the changed features. Let updates for a particular cell arrive according to a rate $\lambda$, and let $D$ be the end-to-end delay from an upstream commit to the consumer performing invalidation. The worst-case staleness window is $\min(\tau,D)$, and the approximate probability a randomly timed read encounters stale data is $1-e^{-\lambda\,\min(\tau,\mathbb{E}[D])}$ \cite{PishroNik_PoissonProcess_Basics}. Tuning is therefore done along two axes:
+
+\begin{itemize}
+  \item Choosing $\tau$ by layer volatility and tolerance for stale reads.
+  \item Reducing $\mathbb{E}[D]$ by provisioning streaming paths and consumers.
+\end{itemize}
+
+In practice we also add \emph{refresh-on-read} for near-expiry hits, a \emph{write-through} path for writes issued via the service itself, and \emph{grace} windows where slightly stale entries can be served while a background refresh runs, keeping tail latency low while still bounding staleness.
 
 \subsubsection{Delivery Semantics and Ordering}
+Event-driven invalidation relies on the messaging substrate's guarantees. Kafka keeps order \emph{within} a topic partition, so partitioning by a stable key (e.g., feature identifier or H3 cell) gives in-order change events for items mapped to the same key \cite{Kafka_Docs}. Default delivery is at-least-once, so consumers must therefore be repeat-safe. We attach a ever-increasing source version (e.g., PostgreSQL LSN from Debezium) to each event and apply \emph{compare-and-set} invalidation: drop cache entries if and only if the incoming version is newer than the last processed one. Duplicate or out-of-order events are therefore harmless \cite{Debezium_Postgres}. Where required, Kafka's reliable producers and transactions enable exactly-once processing for read-process-write topologies, trading operational complexity for stronger guarantees. Finally, we bound \emph{recovery-time} after outages by replaying from a saved offset and reapplying repeat-safe invalidations, because invalidation is repeat-safe, replay restores consistency without global cache purges. Together, partitioned ordering, repeat-safe handlers, and version checks ensure a consistent, minimal-invalidations stream that keeps the cache aligned.
 
 \subsection{Performance and Latency Modeling}
 
 \subsubsection{End-to-End Latency Decomposition}
+We break down end-to-end latency to distinct components to identify bottlenecks and target optimizations. Let a request traverse:
+
+\begin{itemize}
+  \item The client $\rightarrow$ middleware network.
+  \item Middleware parsing/routing (T\text{mw}).
+  \item Cache lookup and (if hit) result composition plus optional post-filter.
+  \item Database path on a miss---planner, index traversal, predicate evaluation, result materialization.
+  \item Middleware $\rightarrow$ client transfer plus serialization.
+\end{itemize}
+
+Then the total end-to-end latency $T_{\text{e2e}}$ is
+\[
+T_{\text{e2e}}=
+T_{\text{net,in}}+T_{\text{mw}}+\begin{cases}
+T_{\text{cache}} & \text{hit},\\
+T_{\text{db}}+T_{\text{cache(post)}} & \text{miss},
+\end{cases}
++T_{\text{net,out}}.
+\]
+On hits, $T_{\text{db}}=0$ and $T_{\text{cache}}$ dominates, while on misses, $T_{\text{db}}$ typically dominates. We measure each segment and track percentiles (P50/P95/P99) rather than means, since heavy-tailed effects can hide user-visible slowdowns in averages \cite{Dean_2013}. Additional SRE "golden signals" (latency, traffic, errors, saturation) help correlate spikes \cite{GoogleSRE_Monitoring} in $T_{\text{db}}$ with database saturation, or rises in $T_{\text{cache}}$ with composition overhead at very high H3 resolutions. This decomposition directly informs experiments (e.g., resolution sweeps) and operations (e.g., whether to scale middleware vs.\ database vs.\ network).
 
 \subsubsection{Queueing Basics and Little’s Law}
+Queueing theory connects arrival rate, concurrency, and delay. Little's Law states that the average number of in-flight requests $N$ equals arrival rate $\lambda$ times average response time $R$: $N=\lambda R$ \cite{Little_1961}. Therefore, at a fixed $\lambda$, reducing $R$ (via cache hits) lowers concurrency and pressure on backend systems. For a single-server station with exponential arrival gaps and service times (M/M/1), service rate $\mu=1/S$ (mean service time $S$) and utilization $\rho=\lambda/\mu$. Stability requires $\rho<1$, and the expected response time is
+\[
+  R=\frac{S}{1-\rho}=\frac{1/\mu}{1-\lambda/\mu}
+\]
+cf.\ \cite{Myers_MM1_Queue},
+showing how delay grows nonlinearly as utilization approaches 1. In the middleware, the "server" may be the PostGIS node on misses or the middleware on hits; multiple cores/nodes generalizes the model (e.g., M/M/$k$). So we estimate $\lambda$ from observed traffic, measure $R$ per path (hit/miss), and size concurrency limits and thread pools so that $\rho$ stays well below overload levels at target latencies. These formulas provide a simple way to plan capacity and highlight the trade-off between raising the hit ratio and improving database speed.
 
 \subsubsection{Tail Latency and Percentiles}
+Average latency can hide slow cases that have the biggest impact on how responsive a system feels to users. A small number of slow operations (for example, long network paths, cache misses, garbage collection pauses, or slow database queries) can build up across microservices and cause much longer end-to-end delays. Because of this, we focus on high-percentile service-level indicators (SLIs), mainly P95 and P99, as the main measures for interactive workloads. P95 shows how most users experience the system during load spikes, while P99 captures the slowest visible responses under normal conditions and is affected by extra delay added by combining multiple backend calls in one request. These percentiles help guide both design (for example, keeping cache merge time low and limiting how many backends a request touches) and operations (for example, alerting on slowdowns that do not change the average). We report P50, P95, and P99 for the full path and for key parts (cache, middleware, database), and we use tail-focused goals (for example, “P99 < 200 ms”) to test whether adaptive spatial caching improves responsiveness beyond average latency.
 
 \subsubsection{Hit Ratio vs. Latency/Throughput Trade-off}
+Caching reduces both latency and backend load through two effects: serving hits quickly from memory and not sending those requests to the database. Let $H$ be the hit ratio. With average hit and miss latencies $L_{\mathrm{hit}}$ and $L_{\mathrm{miss}}$, the expected end-to-end latency is
+\[
+\mathbb{E}[L] = H\,L_{\mathrm{hit}} + (1-H)\,L_{\mathrm{miss}}.
+\]
+Similarly, the expected backend work (CPU/I/O) is 
+\[
+\mathbb{E}[B] = H\,B_{\mathrm{hit}} + (1-H)\,B_{\mathrm{miss}},
+\]
+with $B_{\mathrm{hit}}\!\ll\!B_{\mathrm{miss}}$. Increasing $H$ therefore lowers $\mathbb{E}[L]$ and directly offloads the database. Under Little's Law, reducing $R$ (response time) also lowers in-flight concurrency at the backend, improving queueing and tail latency \cite{Samorodnitsky_LittlesLaw}. However, raising $H$ by pushing to very small spatial cells can add extra merge work and frequent key changes, which raises $L_{\mathrm{hit}}$ and memory pressure. The optimal point balances:
+\begin{itemize}
+  \item Admission/replacement that prioritise reusable cells.
+  \item Choosing a cell size that keeps reuse high while limiting how many cells each request needs.
+  \item Freshness policies (TTL/events) that avoid invalidating hot cells too aggressively.
+\end{itemize}
+
+Our evaluation therefore reports $(H, \mathbb{E}[L], \text{P95/P99}, \mathbb{E}[B])$ together to show these trade-offs.
 
 \subsubsection{Granularity vs. Memory Cost (H3 Resolution)}
+H3 offers a hierarchy of resolutions: as the resolution increases, cells become smaller, and the number of cells needed to cover the same area grows roughly exponentially. Finer resolutions give better spatial accuracy—queries overlap more with cached cells, and extra data fetched outside the target area decreases—raising the chance of cache hits for small, detailed regions. The trade-off is more keys per request, higher metadata cost per cell, and longer merge times when combining many cell results. Coarser resolutions show the opposite effect: fewer keys, smaller index structures, and faster merging, but more overcoverage near boundaries and a lower chance that small queries match popular cells. Memory use also grows with the number of stored (layer, resolution, cell, filter) entries; at high resolutions, busy urban areas can spread across many nearby cells unless caching is selective. In practice, we test a few resolutions and choose the one that gives the best overall results, highest P95/P99 improvement with acceptable memory use and merge cost. When hotspots cover multiple cells, a coarser “umbrella” entry can also be stored for bursts of traffic, while a subset of fine cells is kept for high-detail queries.
 
 \subsubsection{Workload Skew and Hotspot Dynamics}
+Spatial access patterns are usually uneven: a small number of regions get most of the traffic while the rest stay cold. Also, popularity changes over time with events or daily activity cycles. For this reason, we track per-cell activity using \emph{time-aware} counters instead of raw counts. A sliding window over recent requests captures short-term demand and reacts quickly to changes, but it also forgets too suddenly. In contrast, \emph{exponentially decayed} counts adapt more smoothly by giving less weight to older accesses using a decay factor $\alpha!\in!(0,1)$. Cells are then admitted when their decayed frequency passes a threshold compared to their memory cost and merge time. Replacement keeps long-term hotspots (high long-term weight) while letting short-lived spikes use space briefly in the "recent" list. To reduce uneven coverage, we apply mild \emph{spatial smoothing}, where nearby cells inherit a small share of a cell's activity, helping to catch slightly shifted viewports. Finally, to handle sudden bursts (for example, a city-wide event), we limit how many new cells can be added in one interval and temporarily promote coarser cells, merging many small keys into one while keeping fine-grained entries that stay consistently active.
 
 \subsubsection{Golden Signals and Cache Metrics}
+We adopt standard SRE "golden signals" plus cache-specific metrics for evaluation and operations:
+\begin{itemize}
+  \item \textbf{Latency:} P50/P95/P99 for end-to-end, cache-hit path, and miss path.
+  \item \textbf{Throughput (Traffic):} requests/s overall, hits/s, misses/s; per-layer breakdown.
+  \item \textbf{Errors:} non-2xx/5xx rates and cache/middleware exceptions.
+  \item \textbf{Saturation:} CPU, memory, and connection pool utilisation for middleware and PostGIS; Redis memory/evictions.
+  \item \textbf{Cache ratios:} hit/miss ratio, byte hit ratio, and origin offload (misses avoided).
+  \item \textbf{Freshness:} fraction of responses older than target; invalidations/s; average delay from update to invalidate.
+  \item \textbf{Spatial stats:} per-cell request share (skew), active-key count, keys per request, and average bytes per cell.
+\end{itemize}
+These metrics connect design choices (resolution, admission/replacement, TTL/events) to user outcomes (tail latency) and system health (backend offload and saturation).
+
