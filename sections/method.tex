@@ -6,7 +6,7 @@
 \subsection{Research Approach and Study Design}
 The goal is to measure how an H3-keyed middleware cache affects latency and load under skewed spatial workloads, compared to no cache. Each configuration is run with the same datasets, the same mix of query footprints (BBOX and polygons), and the same arrival pattern. Experiments are containerised and scripted so runs are repeatable.
 
-For each workload profile we cycle through the configurations, repeat runs, and report median and percentile metrics across repetitions. External factors are fixed as much as possible (hardware, network, versions, etc.), warm up the system, and then collect measurements during a steady window. The SRE “golden signals” are reported and cache-specific indicators: P50/P95/P99 latency (overall, hit-path, miss-path), requests/s, error rate, saturation (CPU/memory), and hit/miss/partial-hit ratios.
+For each workload profile the configurations are cycled through, runs are repeated, and median and percentile metrics are reported across repetitions. External factors are fixed as much as possible (hardware, network, versions, etc.), warm up the system, and then collect measurements during a steady window. The SRE “golden signals” are reported and cache-specific indicators: P50/P95/P99 latency (overall, hit-path, miss-path), requests/s, error rate, saturation (CPU/memory), and hit/miss/partial-hit ratios.
 
 Independent variables are H3 resolution (7–9), decay, and freshness policy. Dependent variables are latency percentiles, PostGIS CPU, Redis memory and evictions, and staleness.
 
@@ -19,7 +19,7 @@ Layers are published in \texttt{EPSG:4326} and responses are encoded as GeoJSON.
 
 Kafka provides in-partition ordering \cite{Kafka_Introduction}; consumers are in a single group per environment so each partition is processed by exactly one consumer. Event handling is repeat-safe so duplicate invalidations are harmless.
 
-We assume stable network when testing, and no background load except the experiment. We do not change GeoServer/PostGIS schemas or indexes; the middleware is non-invasive and standards-compliant on the wire.
+A stable network is assumed during testing, and no background load is assumed except the experiment. GeoServer/PostGIS schemas or indexes are not changed; the middleware is non-invasive and standards-compliant on the wire.
 
 \subsection{Middleware Design and Implementation}
 The middleware is a Go service that acts as an HTTP reverse proxy with spatial awareness. It parses incoming requests, maps footprints to H3 cells, looks up Redis for per-cell entries, forwards misses to GeoServer, and composes responses. A Kafka consumer listens for change events, maps updated geometries to cells, and deletes affected keys. The service exposes Prometheus metrics and health checks. Configuration is via environment variables and a simple YAML file; all components run in Docker for reproducibility.
@@ -42,10 +42,66 @@ The middleware is a Go service that acts as an HTTP reverse proxy with spatial a
 \textbf{8. Metrics/health:} Exposes request counters, latency histograms, hit/miss ratios, Redis stats, and invalidation lag. Health endpoints return liveness/readiness for containers.
 
 \subsubsection{H3 Footprint Mapping and Request Bucketing}
-We use H3’s polygon-to-cells (“polygonToCells”) functions to map a request footprint to cell IDs \cite{H3_API_Regions}. A BBOX is treated as a polygon with four vertices. For each request, the mapper returns the set of cell IDs at resolution $r$, which become the unit of reuse and invalidation. The default polygonToCells uses a centroid-in-polygon rule \cite{H3_API_Regions}, which is simple and fast; thin shapes near boundaries can be handled by increasing $r$ or by expanding one ring and trimming on compose.
+H3’s polygon-to-cells (“polygonToCells”) functions are used to map a request footprint to cell IDs \cite{H3_API_Regions}. A BBOX is treated as a polygon with four vertices. For each request, the mapper returns the set of cell IDs at resolution $r$, which become the unit of reuse and invalidation. The default polygonToCells uses a centroid-in-polygon rule \cite{H3_API_Regions}, which is simple and fast; thin shapes near boundaries can be handled by increasing $r$ or by expanding one ring and trimming on compose.
 
-Resolution controls granularity. Higher $r$ gives smaller cells, more precise coverage, and often higher hit probability for small windows, but increases keys per request. Lower $r$ reduces keys and metadata but can over-cover and reduce locality. We therefore sweep $r\in\{7,8,9\}$ in experiments and record hit ratio, keys-per-request, and bytes-per-cell.
+Resolution controls granularity. Higher $r$ gives smaller cells, more precise coverage, and often higher hit probability for small windows, but increases keys per request. Lower $r$ reduces keys and metadata but can over-cover and reduce locality. Resolution is therefore swept with $r\in\{7,8,9\}$ in experiments and hit ratio, keys-per-request, and bytes-per-cell are recorded.
 
 The cache key includes the cell ID and a stable hash of the attribute filter (normalised ECQL). This keeps semantically different queries isolated while enabling reuse when both footprint and filter match.
 
-On composed responses we reapply the original spatial filter to remove any features picked up by boundary cells. Multi-polygons are supported by passing outer and inner rings to the polyfill. All cell operations are deterministic so repeated queries map to the same key set.
+On composed responses the original spatial filter is reapplied to remove any features picked up by boundary cells. Multi-polygons are supported by passing outer and inner rings to the polyfill. All cell operations are deterministic so repeated queries map to the same key set.
+
+\subsubsection{Caching in Redis: Key Schema and Result Storage}
+The cache entries are stored in Redis using a composite key:
+\texttt{<layer>:\allowbreak<srid>:\allowbreak<res>:\allowbreak<cellId>:\allowbreak<filterHash>:\allowbreak<version>}. Values are kept as Redis strings (binary-safe blobs), which allows compact, compressed payloads without concerns about encoding. Each request that spans multiple H3 cells triggers a single \texttt{MGET} for those keys to reduce round trips. \texttt{cellId} is the H3 64-bit identifier \cite{H3_Core_Indexing}, and \texttt{filterHash} fingerprints the normalised ECQL/FES filter so semantically different queries do not collide.
+
+The value layout is simple: a small header (timestamps, byte length, schema/version) and a payload. For vector responses GeoJSON Features or small, per-cell arrays of feature rows are stored. TTL is set at write and attached per key, Redis removes expired keys automatically. Memory pressure is controlled by \texttt{maxmemory} and an eviction policy (e.g., \texttt{allkeys-lru} or \texttt{allkeys-lfu}) so the cache behaves predictably when full.
+
+\subsubsection{Response Composition and Correctness Safeguards}
+The aggregator merges per-cell payloads into one \texttt{FeatureCollection}. De-duplication is performed by a stable feature identifier (primary key) that is also exposed as the GeoJSON \texttt{id} when possible; this avoids duplicates when neighbouring cells overlap. After merging, the original attribute and spatial filter are reapplied so the final result matches what PostGIS would have returned for the exact footprint. In practice exact geometry checks (e.g., \texttt{ST\_Intersects}/\texttt{ST\_Within}) are applied on the composed set to trim any over-coverage from boundary cells.
+
+Partial failures are also guarded against. If some cells miss or expire while others hit, the middleware fetches the missing ones from GeoServer and only returns once the full set is assembled. Latencies and correctness counters are tagged by “full-hit/partial/miss” so the impact in P50/P95/P99 can be inspected and post-filtering can be verified to keep answers faithful to the original query.
+
+\subsection{Freshness Mechanisms}
+TTL-based freshness is combined with event-driven invalidation. TTL gives a clear freshness lifetime (fresh vs.\ stale) that is easy to reason about and measure. Event-driven invalidation reacts to actual data changes and targets only the overlapping H3 cells, keeping hot regions up to date without broad purges.
+
+\subsubsection{TTL Policy and Configuration}
+On write, each key gets a TTL, keys expire automatically once the countdown reaches zero. TTL is set at insert time. Remaining lifetime is tracked with \texttt{TTL}/\texttt{PTTL} during debugging. TTLs are per layer: fast-changing layers get short TTLs, static base layers get longer ones.
+
+Operationally, Redis removes expired keys and can also evict keys under memory pressure according to \texttt{maxmemory-policy}. An \emph{allkeys} policy (LRU/LFU) is used when the dataset is entirely cacheable and memory-bounded, or a \emph{volatile} policy is used when only TTL-tagged entries should be evicted. Metrics for expiry and eviction are also exposed so freshness decisions (TTL) can be separated from memory backpressure effects (evictions) in the results.
+
+\subsubsection{Kafka/CDC Event Processing and Spatial Invalidation}
+To cut staleness after updates, change events are consumed from PostgreSQL. The PostgreSQL connector streams inserts/updates/deletes from the WAL as structured messages; the middleware extracts the changed geometry, maps it to H3 cells, and invalidates the matching keys. This targets only the affected spatial scope and avoids global cache clears.
+
+Kafka’s ordering within a partition is relied on: by partitioning events on a stable key (e.g., feature ID), all changes for the same feature arrive in order. Delivery is at-least-once by default \cite{Kafka_4_1_Design}, so the invalidation handler is \emph{idempotent} and \emph{version-aware} (drops events that have already been processed at an equal or newer source LSN). Where a stricter pipeline is needed, Kafka’s idempotent producers and transactions can be used to enable exactly-once processing, with added operational cost. These guarantees keep invalidation consistent even during retries or restarts.
+
+For spatial targeting the H3 cells touched by the changed geometry are computed using the standard polygon-to-cells functions, then keys for those \texttt{<layer,res,cellId,filterHash>} combinations are deleted. This ties freshness directly to spatial overlap while keeping runtime costs low.
+
+\subsection{Experimental Methodology}
+x
+
+\subsubsection{Testbed and Deployment (Containers, Versions, Hardware)}
+x
+
+\subsubsection{Baselines and Compared Configurations}
+x
+
+\subsubsection{Experiment Procedure}
+x
+
+\subsection{Workloads}
+x
+
+\subsubsection{Read Workload: Skew/Hotspot Scenarios and Query Shapes}
+x
+
+\subsubsection{Update Workload: Change Events for Invalidation Tests}
+x
+
+\subsection{Measurements and Data Analysis}
+x
+
+\subsubsection{Metrics and Instrumentation}
+x
+
+\subsubsection{Result Processing and Variability Reporting}
+x
