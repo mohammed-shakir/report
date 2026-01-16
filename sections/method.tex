@@ -44,7 +44,7 @@ The middleware is a Go service that acts as an HTTP reverse proxy with spatial a
 \subsubsection{H3 Footprint Mapping and Request Bucketing}
 H3’s polygon-to-cells (“polygonToCells”) functions are used to map a request footprint to cell IDs \cite{H3_API_Regions}. A BBOX is treated as a polygon with four vertices. For each request, the mapper returns the set of cell IDs at resolution $r$, which become the unit of reuse and invalidation. The default polygonToCells uses a centroid-in-polygon rule \cite{H3_API_Regions}, which is simple and fast; thin shapes near boundaries can be handled by increasing $r$ or by expanding one ring and trimming on compose.
 
-Resolution controls granularity. Higher $r$ gives smaller cells, more precise coverage, and often higher hit probability for small windows, but increases keys per request. Lower $r$ reduces keys and metadata but can over-cover and reduce locality. Resolution is therefore swept with $r\in\{7,8,9\}$ in experiments and hit ratio, keys-per-request, and bytes-per-cell are recorded.
+Resolution controls granularity. Higher $r$ gives smaller cells, more precise coverage, and often higher hit probability for small windows, but increases keys per request. Lower $r$ reduces keys and metadata but can over-cover and reduce locality. Resolution is therefore swept with $r\in\{5,6,7,8,9,10\}$ in experiments and hit ratio, keys-per-request, and bytes-per-cell are recorded.
 
 The cache key includes the cell ID and a stable hash of the attribute filter (normalised ECQL). This keeps semantically different queries isolated while enabling reuse when both footprint and filter match.
 
@@ -77,31 +77,37 @@ Kafka’s ordering within a partition is relied on: by partitioning events on a 
 For spatial targeting the H3 cells touched by the changed geometry are computed using the standard polygon-to-cells functions, then keys for those \texttt{<layer,res,cellId,filterHash>} combinations are deleted. This ties freshness directly to spatial overlap while keeping runtime costs low.
 
 \subsection{Experimental Methodology}
-x
+The experiments compare an H3-keyed middleware cache against baselines under controlled, repeatable conditions. Each run follows a fixed script: container start, warm-up, timed measurement window, and teardown. Image tags and record digests are pinned to keep versions stable across repetitions. Load is driven by scripted scenarios at a fixed arrival rate so that request mix and intensity are identical between configurations. Runs are repeated multiple times, and then aggregate medians and percentiles across repetitions.
+
+Measurements are taken only during a steady window after warm-up. Latency (P50/P95/P99), hit/miss rates, and backend load (PostGIS CPU, Redis memory/evictions) are collected. External factors are kept stable: hardware, container limits, network, and dataset. The study is comparative rather than absolute, so the study does not claim universal latency numbers, but it does quantify deltas between configurations under the same workload. Threats to validity (synthetic traffic, single-node deployments, and Docker networking) are noted, and they are mitigated by repeating trials with fixed seeds.
 
 \subsubsection{Testbed and Deployment (Containers, Versions, Hardware)}
-x
+All components run in Docker on a single host laptop. Images are pinned by tag and the exact image digest is recorded in the repository. The stack includes: GeoServer (WFS/WMS), PostgreSQL, PostGIS, Redis, the middleware proxy, Kafka, Prometheus, Grafana, Loki, and Promtail. Each service is launched via a compose file. The dataset is loaded once at startup, and containers are restarted between configurations to reset caches.
+
+Hardware was a single laptop running Arch Linux (Lenovo Legion 7 15IMH05) with an Intel Core i7-10750H (6 cores / 12 threads) and 16~GiB RAM. The experimental stack ran in Docker containers (PostGIS, GeoServer, Redis, Kafka, and monitoring). Redis was configured with a fixed memory budget using \texttt{maxmemory}=256~MiB and the \texttt{allkeys-lru} eviction policy to bound cache growth. Prometheus scraped service metrics and Grafana dashboards summarized latency distributions, throughput, error rates, and Redis memory/evictions; log-based observability was provided via Loki/Promtail.
 
 \subsubsection{Baselines and Compared Configurations}
-x
+Four configurations are compared:
+\begin{enumerate}
+  \item \textbf{Baseline with low Zipf}: No cache, requests go directly to GeoServer/PostGIS, and the distribution of calls are spread out.
+    \item \textbf{Baseline with high Zipf}: No cache, requests go directly to GeoServer/PostGIS, and the distribution of calls are compact.
+  \item \textbf{H3 cache with low H3 res and low Zipf}: per-cell keys at low H3 resolution, and the distribution of calls are spread out.
+  \item \textbf{H3 cache with high H3 res and low Zipf}: per-cell keys at high H3 resolution, and the distribution of calls are spread out.
+  \item \textbf{H3 cache with low H3 res and high Zipf}: per-cell keys at low H3 resolution, and the distribution of calls are compact.
+  \item \textbf{H3 cache with high H3 res and high Zipf}: per-cell keys at high H3 resolution, and the distribution of calls are compact.
+\end{enumerate}
+
+For H3 resolutions $r\in\{5,6,7,8,9,10\}$ are used to study hit ratio, memory, speed, and correctness. For each configuration the same dataset, arrival pattern, and container limits are kept. End-to-end latency (P50/P95/P99), misses avoided, Redis memory/evictions, and staleness (fraction of responses older than target) are reported.
 
 \subsubsection{Experiment Procedure}
-x
+Each trial proceeds as follows:
 
-\subsection{Workloads}
-x
+\begin{enumerate}
+  \item Start all containers and wait for health checks to pass.
+  \item Warm up the system by running the target request for a fixed duration (e.g., 1 minutes) to stabilise caches and JIT optimisations.
+  \item Run the load generator at the target constant arrival rate for a fixed measurement window (e.g., 4 minutes), collecting metrics during this period.
+  \item Stop the load generator and export collected metrics from Prometheus and middleware logs for analysis.
+  \item Restart containers to reset state before the next configuration.
+\end{enumerate}
 
-\subsubsection{Read Workload: Skew/Hotspot Scenarios and Query Shapes}
-x
-
-\subsubsection{Update Workload: Change Events for Invalidation Tests}
-x
-
-\subsection{Measurements and Data Analysis}
-x
-
-\subsubsection{Metrics and Instrumentation}
-x
-
-\subsubsection{Result Processing and Variability Reporting}
-x
+Repeat this procedure for each configuration and workload, ensuring that each run uses the same request list and arrival pattern. Each configuration is repeated multiple times (e.g., 5 times) to account for variability, and median/percentile metrics are computed across runs.
