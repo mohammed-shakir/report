@@ -18,6 +18,12 @@ Queries in PostGIS Using H3-Based Indexing
 latexmk -pdf main.tex
 ```
 
+or if you want it in watch mode:
+
+```bash
+latexmk -pdf -pvc main.tex
+```
+
 ### XeLaTeX
 
 ```bash
@@ -28,6 +34,12 @@ The compiled PDF will be saved to:
 
 ```
 build/main.pdf
+```
+
+You can view it with zathura for live reloading:
+
+```bash
+zathura build/main.pdf &
 ```
 
 ## Cleaning
