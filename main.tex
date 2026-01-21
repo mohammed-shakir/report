@@ -2,7 +2,6 @@
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage[english]{babel}
-\usepackage{geometry}
 \usepackage{microtype}
 \usepackage{mathtools}
 \usepackage{amssymb}
@@ -26,6 +25,11 @@
 \usepackage{caption}
 \usepackage{verbatim}
 \usepackage{titlesec}
+\usepackage{acro}
+\acsetup{
+  list/display = used,
+  pages/display = all
+}
 \captionsetup{font=small}
 \captionsetup[subfigure]{font=footnotesize, skip=2pt}
 \hypersetup{
@@ -45,6 +49,7 @@
 }
 % References
 \addbibresource{references.bib}
+\input{sections/acronyms-defs}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % -                         Title                          - %

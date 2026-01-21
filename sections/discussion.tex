@@ -1,12 +1,44 @@
 \section{Discussion}
+This chapter interprets the results in light of the research questions, focusing on \emph{why} the cache helps under skew, what trade-offs arise from H3 resolution and composition overhead, and how freshness mechanisms affect performance. It is organized by research question first, followed by practical deployment guidance, limitations/threats to validity, and sustainability and ethical considerations.
 
 \subsection{Discussion by research question}
-\subsubsection{RQ1: Effectiveness under skewed workloads}
-\subsubsection{RQ2: Granularity trade-offs (H3 resolution)}
-\subsubsection{RQ3: Freshness and invalidation policy implications}
 
-\subsection{Practical deployment guidance for GeoServer/PostGIS stacks}
+\subsubsection{RQ1: Effectiveness under skewed workloads}
+Across the 800\,\ac{rps} scenarios, the cache clearly improves responsiveness and reduces backend work when access is skewed. The strongest result is that $r{=}7$ consistently lowers P50/P95/P99 versus baseline for all skews that were tried (cf.\ Figures~\ref{fig:latency-zipf-800} and \ref{fig:latency-h3res-800-by-zipf}). The effect grows with skew: as Zipf\_s increases, more requests overlap in a small set of cells, so reuse goes up and the database path is avoided more often. This matches what was observed in the PostGIS CPU plots, where $r{=}7$ cuts median CPU by roughly an order of magnitude at 800\,\ac{rps} (Figure~\ref{fig:postgis-cpu-zipf-800}). In other words, the proxy does not just make hits faster; it also keeps the miss path less congested by preventing queues from building up.
+
+The tails matter most. The P95/P99 gaps (Figures~\ref{fig:latency-speedup-zipf-800} and \ref{fig:latency-zipf-800}) show that the cache reduces the slowest user-visible responses, not only the median. It was also checked that these gains are not an artefact of under-delivering load: $r{=}7$ meets the target throughput with low errors (Figure~\ref{fig:throughput-stability-zipf-800}). By contrast, $r{=}9$ fails to sustain 800\,\ac{rps} (missed tokens and errors), which explains its very high tails and makes it non-comparable at this load.
+
+Load sensitivity at Zipf\_s{=}1.3 backs the same story. At 600/800/1000\,\ac{rps}, the cache keeps tails lower and the achieved/target ratio closer to 1, while baseline starts to slip at 1000\,\ac{rps} (Figures~\ref{fig:loadsens-p95-vs-rps}--\ref{fig:loadsens-achieved-ratio-vs-rps}). Practically, this means caching buys headroom: for the same hardware, the system stays inside latency SLOs at higher offered load.
+
+\textbf{Takeaway.} Under skew (which is common in maps), an H3-keyed cache in front of PostGIS delivers meaningful end-to-end wins: lower tail latency, higher achieved throughput, and large DB CPU offload. The effect is strongest when popular areas concentrate demand; it weakens, but does not disappear, as skew decreases.
+
+\subsubsection{RQ2: Granularity trade-offs (H3 resolution)}
+Resolution controls two things: spatial reuse vs.\ per-request overhead. Coarser grids ($r{=}7$ here) group more queries into the same buckets, which raises hit probability and reduces pressure on PostGIS. That shows up directly in the latency and CPU plots at 800\,\ac{rps}, where $r{=}7$ dominates across skews (Figures~\ref{fig:latency-h3res-800-by-zipf} and \ref{fig:postgis-cpu-zipf-800}). The cost is lower spatial selectivity: each cell covers a larger area, so composition may bring in extra features near boundaries.
+
+Finer grids ($r{=}8$ and especially $r{=}9$) increase specificity, which can help for very small viewports, but they also increase keys-per-request and merge work. That cost shows up in the tails and in throughput stability: $r{=}8$ is viable and becomes better as skew increases (more reuse despite the extra keys), but $r{=}9$ is over the edge at 800\,\ac{rps} on the setup for this thesis (Figures~\ref{fig:achieved-ratio-zipf-800} and \ref{fig:errors-zipf-800}). Memory-wise, GeoServer RAM rises under caching (the main trade-off), but differences across $r$ are smaller than the latency/CPU effects (Figure~\ref{fig:geoserver-mem-zipf-800}).
+
+\textbf{Guidelines.} Start with the coarsest resolution that still aligns with typical viewport sizes (here $r{=}7$), then move one step finer ($r{=}8$) only if clients routinely query very small areas or if over-coverage becomes a correctness/size issue. Watch two indicators when tuning: keys-per-request and merge time (composition overhead), and DB offload. If keys-per-request grows quickly or tails rise, prefer coarser cells or introduce an “umbrella” coarse entry for bursts, keeping only a subset of fine cells hot where there is clear reuse.
+
+\subsubsection{RQ3: Freshness and invalidation policy implications}
+\ac{ttl} gives a simple and measurable upper bound on staleness, while event-driven invalidation cuts staleness sooner for changed regions. In practice, the two should be tuned together. A longer \ac{ttl} improves hit ratio (and thus latency/CPU), but risks serving older data; shorter TTLs lower staleness, but they reduce reuse and can push more requests down the miss path. Event-driven invalidation helps square this circle by removing only the cells that overlap changed features, so popular but unchanged cells remain hot.
+
+Operationally, two practices were found useful. First, set TTLs per layer based on update cadence (short for frequently edited layers, longer for slowly changing base data) and monitor the fraction of responses served past the target. Second, keep invalidation idempotent and version-aware so duplicates or replays are harmless; this avoids broad purges and keeps the cache stable under churn. With those guardrails in place, the main effect of freshness tuning is a smooth trade-off: relaxing TTLs increases reuse and lowers latency until the staleness budget is hit; tightening them does the opposite.
 
 \subsection{Limitations and threats to validity}
+\subsubsection{Synthetic workload vs.\ real traffic.}
+The request mix and Zipf-like skew that are used in this thesis are representative but not exhaustive; real deployments may combine diverse layers or constant cycles that change hot regions over time. Results should be treated as comparative evidence (cache vs.\ baseline under the same conditions), not as universal absolutes across all catalogues and user behaviors.
 
-\subsection{Sustainability and ethical considerations}
+\subsubsection{Single-host, containerized testbed.}
+Running all components on one machine (with Docker networking) can understate network variance that appear in multi-host clusters. Kernel scheduling and IO paths also differ between laptops and production servers.
+
+\subsubsection{Generalizability across schemas and predicates.}
+The thesis focused on common spatial filters in \ac{wfs}/\ac{wms} requests. Workloads with complex attribute joins, heavy server-side processing, or very small polygons may behave differently and benefit from other H3 resolutions. Using spatial indexes in PostGIS helps, but cannot remove all of these differences.
+
+\subsubsection{Freshness and delivery guarantees.}
+\ac{ttl} limits how long cached data can become stale, while event-driven invalidation reduces staleness when updates happen. In practice, \ac{cdc} and messaging can be delayed or duplicated, so we rely on ordered partitions and idempotent handlers to maintain cache consistency. Systems that require strict transactional guarantees must account for the added complexity and overhead of Kafka’s exactly-once mechanisms.
+
+\subsubsection{Cache memory and eviction artifacts.}
+With limited Redis memory, eviction policy affects tail latency during churn. An \emph{allkeys-LFU} or \emph{allkeys-LRU} policy generally works best, but sudden access pattern changes or wide scans can still evict useful entries. Redis documentation on eviction and latency should be kept in mind when interpreting tail-latency spikes under memory pressure.
+
+\subsection{Sustainability (Energy and efficiency)}
+Caching popular regions reduces redundant database work, which lowers CPU time on misses and can reduce energy-per-request. The Green Software Foundation’s SCI specification encourages tracking carbon intensity at the interface boundary (per-request), which aligns with measuring tail latency, offload factor, and achieved/target throughput to quantify efficiency gains from caching \cite{GreenSoftware_SCI_Guide}. Where possible, schedule heavy backfills or pre-warming outside peak grid-carbon windows. Also, energy use scales with overprovisioning; so keep Redis and GeoServer memory allocations proportional to observed working sets and limit concurrency to avoid wasteful queueing.

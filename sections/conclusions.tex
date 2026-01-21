@@ -1,10 +1,32 @@
 \section{Conclusions}
 
 \subsection{Answers to the research questions}
+
 \subsubsection{RQ1: Effectiveness}
-\subsubsection{RQ2: Granularity (recommended resolution)}
+The H3-based cache improves responsiveness and reduces backend load under skewed access. At 800\,\ac{rps}, the best configuration ($r{=}7$) consistently lowered P50/P95/P99 compared to baseline, with the largest gains in the tails. The effect strengthened as skew increased, because more requests overlapped in the same cells and were served from memory. This also showed up as a clear PostGIS CPU offload (roughly an order of magnitude in the median plots), and better achieved/target throughput at high load. The main cost was a moderate increase in GeoServer memory, which is acceptable given the latency and offload benefits.
+
+\subsubsection{RQ2: Granularity}
+Resolution controls reuse vs.\ overhead. Coarser cells ($r{=}7$) grouped nearby views and lifted hit ratio, giving the best tail latency and the highest database offload in the runs. Finer cells ($r{=}8$) helped some small-window cases and improved as skew rose, but carried higher composition and key-churn costs; at 800\,\ac{rps}, $r{=}9$ was not viable on the testbed. In practice, starting from a coarse resolution that roughly matches typical view sizes, and only stepping finer when needed, was the most robust strategy. Keys-per-request and merge time were the most useful live indicators when tuning.
+
 \subsubsection{RQ3: Freshness}
+\ac{ttl} gives a clear age bound; event-driven invalidation then shortens the stale window where updates occur. Using per-layer TTLs matched to update cadence, plus idempotent, version-aware invalidation, kept popular cells hot while replacing only the regions that changed. The trade-off is smooth: longer TTLs raise reuse until a staleness budget is hit; shorter TTLs reduce reuse but tighten freshness. With this setup, the hybrid (\ac{ttl} and events) offered good latency while keeping staleness bounded for edited areas.
 
 \subsection{Contributions}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Design and prototype.} A standards-compatible middleware that maps \ac{wfs}/\ac{wms} footprints to H3 cells, caches per-cell results in Redis, and composes responses on cache hits.
+  \item \textbf{Freshness mechanism.} A hybrid scheme that combines per-key \ac{ttl} with \ac{cdc}/Kafka-driven spatial invalidation, implemented with idempotent, version-aware handlers.
+  \item \textbf{Evaluation method.} A containerized, repeatable benchmark with fixed seeds and steady windows, reporting P50/P95/P99, backend CPU, memory, throughput viability, and cache stats.
+  \item \textbf{Empirical findings.} Clear evidence that H3 based caching improves latency compared to baseline (no caching). $r{=}7$ dominated at 800\,\ac{rps} across skews; $r{=}8$ improved with higher skew; $r{=}9$ was unstable on this hardware/load.
+  \item \textbf{Practical guidance.} Rules of thumb for choosing resolution, watching keys-per-request and merge time, sizing memory, and setting per-layer TTLs.
+\end{itemize}
 
 \subsection{Future work}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Multi-resolution caching.} Use both coarse and fine H3 cells at the same time: coarse cells for short traffic bursts and fine cells for frequently accessed small areas, and choose which one to serve per request.
+  \item \textbf{Cache admission and eviction.} Study simpler admission and replacement strategies that reduce cache churn during sudden workload changes, while still prioritising frequently accessed regions.
+  \item \textbf{Whole-query caching.} Add optional cache entries for very common, identical bounding boxes or polygons to avoid splitting and recombining results on hot paths.
+  \item \textbf{Staleness monitoring.} Record how old cached data is when served and how long invalidation takes, and use this information to automatically tune \ac{ttl} values to meet latency goals.
+  \item \textbf{Broader workloads.} Evaluate the approach on more complex queries, such as attribute joins, server-side transformations, and very small geometries, and test on multi-node deployments.
+  \item \textbf{Operational robustness.} Measure recovery times after failures, study stronger delivery guarantees where needed, and analyse cost and energy usage for different cache sizes.
+  \item \textbf{System integration.} Package the solution as a GeoServer extension or a transparent proxy, and provide simple configuration tools for per-layer defaults such as resolution, \ac{ttl}, and invalidation scope.
+\end{itemize}
