@@ -32,7 +32,7 @@ latexmk -pdfxe main.tex
 
 The compiled PDF will be saved to:
 
-```
+```bash
 build/main.pdf
 ```
 

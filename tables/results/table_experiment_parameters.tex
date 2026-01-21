@@ -1,0 +1,20 @@
+\begin{tabular}{@{}p{0.40\linewidth}p{0.56\linewidth}@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+BBOX samples & \num{1024} \\
+Concurrency & \num{32} \\
+Warm-up & \SI{30}{\second} \\
+Measurement window & \SI{60}{\second} \\
+Target RPS & \numlist{600;800;1000} \\
+Repetitions ($n_\text{reps}$) & \num{600}: \num{1}; \num{800}: \num{3}; \num{1000}: \num{1} \\
+Scenarios & Baseline; Cache \\
+H3 resolution (cache) & \numlist{7;8;9} \\
+TTL & \SI{60}{\second} \\
+Zipf $s$ & \numlist{1.1;1.2;1.3;1.4} \\
+Zipf $v$ & \num{1.0} \\
+Layer & \texttt{demo:NR\_polygon} \\
+Seed & \num{123456789} \\
+\bottomrule
+\end{tabular}
+

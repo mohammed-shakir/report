@@ -1,0 +1,26 @@
+\begin{tabular}{@{}l
+  S[table-format=1.0]
+  S[table-format=4.0]
+  S[table-format=2.2,round-mode=places,round-precision=2]
+  S[table-format=2.2,round-mode=places,round-precision=2]
+  S[table-format=3.2,round-mode=places,round-precision=2]
+  S[table-format=4.1,round-mode=places,round-precision=1]
+  S[table-format=2.0]
+  S[table-format=2.1,round-mode=places,round-precision=1]
+  S[table-format=3.1,round-mode=places,round-precision=1]
+@{}}
+\toprule
+Scenario & \multicolumn{1}{c}{$r$} & \multicolumn{1}{c}{Target (RPS)} &
+\multicolumn{1}{c}{P50 (ms)} & \multicolumn{1}{c}{P95 (ms)} & \multicolumn{1}{c}{P99 (ms)} &
+\multicolumn{1}{c}{Achieved (RPS)} & \multicolumn{1}{c}{Err} &
+\multicolumn{1}{c}{PG CPU (\%)} & \multicolumn{1}{c}{GS CPU (\%)} \\
+\midrule
+Baseline & 0 & 600  & 5.159  & 25.802 & 75.727  & 598.778 & 1 & 44.462 & 217.034 \\
+Cache    & 8 & 600  & 2.567  & 16.316 & 32.436  & 599.980 & 2 & 8.946  & 34.681 \\
+Baseline & 0 & 800  & 5.325  & 29.782 & 85.545  & 789.196 & 5 & 57.580 & 285.845 \\
+Cache    & 8 & 800  & 2.742  & 17.354 & 35.743  & 799.970 & 4 & 12.129 & 48.748 \\
+Baseline & 0 & 1000 & 21.334 & 67.557 & 111.334 & 970.894 & 5 & 83.239 & 392.740 \\
+Cache    & 8 & 1000 & 4.090  & 39.217 & 98.472  & 979.682 & 2 & 14.961 & 56.434 \\
+\bottomrule
+\end{tabular}
+

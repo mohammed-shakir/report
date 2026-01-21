@@ -1,15 +1,299 @@
 \section{Results}
+This chapter presents the measured effects of the middleware cache compared to the baseline service. Results are reported using latency percentiles (P50/P95/P99) alongside throughput and error counts, and backend CPU and memory measurements are also reported to explain observed performance changes. Unless stated otherwise, plots show aggregated medians across repetitions.
 
 \subsection{Experimental Setup}
+All test conditions are kept fixed across configurations and only vary the parameters listed in the matrices (Table~\ref{tab:experiment-parameters}). The offered load is held constant per scenario, runs follow the same warm-up and timed window procedure, and the dataset, containers, and seeds are identical between configurations. Median values are computed across repeated runs per config, the number of repetitions and achieved throughput per run are listed in the overview table (Table~\ref{tab:800-summary}). 
+
+\begin{table}[tbp]
+  \centering
+  \caption{Experiment parameter matrix used across configurations.}
+  \label{tab:experiment-parameters}
+  \begingroup
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.05}
+    \begin{adjustbox}{max width=\linewidth}
+      \input{tables/results/table_experiment_parameters.tex}
+    \end{adjustbox}
+  \endgroup
+\end{table}
+
+\clearpage
+\begin{landscape}
+\begin{table}[tbp]
+  \centering
+  \scriptsize
+  \caption{Overview of the 800\,RPS scenarios: latency percentiles, throughput/errors, repetitions ($n_\text{reps}$), and backend resource usage (medians across repetitions; CPU is total across cores; memory in MiB).}
+  \label{tab:800-summary}
+  \begingroup
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.05}
+    \begin{adjustbox}{max width=\linewidth}
+      \input{tables/results/table_800_summary.tex}
+    \end{adjustbox}
+  \endgroup
+\end{table}
+\end{landscape}
+\clearpage
 
 \subsection{Latency Results}
+Latency is reported as P50/P95/P99 for the end-to-end path, using medians across repetitions per configuration. Baseline (no cache) is compared with H3 cache at $r\in\{7,8,9\}$, focusing on the 800\,RPS scenarios unless noted. Because cache hit ratio is not logged directly, reuse is interpreted indirectly via latency speedup (baseline/cache; Figure~\ref{fig:latency-speedup-zipf-800}) and backend offload (reduced PostGIS CPU; Figure~\ref{fig:backend-cpu-zipf-800}).
+
 \subsubsection{Latency vs Zipf skew}
+Figure~\ref{fig:latency-zipf-800} summarizes how skew (Zipf\_s) changes latency at 800\,RPS. As skew increases (from 1.1 to 1.4), both baseline and cache improve, but the cache at $r{=}8$ improves the most with skew, while $r{=}7$ remains consistently low and is best among the tested resolutions. This advantage is expected for coarser grids, which increase spatial reuse under skew by grouping a larger area into each cache bucket. At Zipf\_s\,{=}1.1 the baseline has P50 $\approx$\,5.87\,ms, P95 $\approx$\,34.83\,ms and P99 $\approx$\,100.11\,ms, while $r{=}7$ has P50 $\approx$\,1.08\,ms, P95 $\approx$\,6.42\,ms and P99 $\approx$\,13.49\,ms ($\sim$5.4$\times$, $\sim$5.4$\times$ and $\sim$7.4$\times$ lower; Figure~\ref{fig:latency-zipf-800}). The same effect is shown as explicit speedup factors (baseline/cache) in Figure~\ref{fig:latency-speedup-zipf-800}. At Zipf\_s\,{=}1.4 the baseline P50/P95/P99 are $\approx$\,5.10/26.95/90.33\,ms, and $r{=}7$ is $\approx$\,0.94/4.66/8.48\,ms ($\sim$5.4$\times$, $\sim$5.8$\times$ and $\sim$10.6$\times$ lower; Figure~\ref{fig:latency-zipf-800}). The $r{=}8$ cache improves with skew (e.g., P95 $\approx$\,43.43\,ms at 1.1 down to $\approx$\,13.37\,ms at 1.4; Figure~\ref{fig:latency-p95-zipf-800}), but under low skew it can be slower than baseline in the tails, but it still preforms better than baseline at higher skews (1.3 or higher), and better at P50 even in lower skews. The $r{=}9$ cache shows very high tail latency at 800\,RPS (Figure~\ref{fig:latency-p99-zipf-800}); the numbers for $r{=}9$ are interpreted with caution given its poor load sustain (Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}). 
+
+\begin{figure}[p]
+  \centering
+
+  \begin{subfigure}[t]{0.86\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_latency_p50_vs_zipf_800.png}
+    \caption{P50.}
+    % \label{fig:latency-p50-zipf-800}
+  \end{subfigure}
+  \vspace{0.8em}
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_latency_p95_vs_zipf_800.png}
+    \caption{P95.}
+    \label{fig:latency-p95-zipf-800}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_latency_p99_vs_zipf_800.png}
+    \caption{P99.}
+    \label{fig:latency-p99-zipf-800}
+  \end{subfigure}
+
+  \caption{End-to-end latency vs.\ Zipf skew at 800\,RPS (medians across repetitions).}
+  \label{fig:latency-zipf-800}
+\end{figure}
+
 \subsubsection{Latency vs H3 resolution}
+At 800\,RPS, resolution matters (Figure~\ref{fig:latency-h3res-800-by-zipf}). The cache at $r{=}7$ consistently gives the best latency across skews. However, this should be interpreted as a granularity–reuse trade-off: lower resolutions cover larger areas and therefore tend to improve reuse/hit probability, but they may reduce spatial selectivity (and can increase overfetch) when client requests are much smaller than a cell: at Zipf\_s\,{=}1.1 it brings P50/P95/P99 to about 1.08/6.42/13.49\,ms, and at 1.4 to about 0.94/4.66/8.48\,ms (Figure~\ref{fig:latency-h3res-800-by-zipf}). Compared to baseline at the same skews, this is roughly $5\!\times$–$6\!\times$ lower P50/P95 and $7\!\times$–$11\!\times$ lower P99. The $r{=}8$ cache is mixed: under low skew (1.1–1.2) its tails (P95/P99) are above baseline, but under higher skew (1.3–1.4) it improves and beats baseline, but it still beats the baseline in all skews for P50. The $r{=}9$ cache performs poorly at 800\,RPS (very large P95/P99) and does not sustain the offered load (Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}); its percentiles are treated as non-comparable for fairness and focus on $r{=}7$/$8$ vs.\ baseline for the main conclusions. 
+
+\begin{figure}[p]
+  \centering
+
+  \begin{subfigure}[t]{0.86\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_latency_p50_vs_h3res_800_by_zipf.png}
+    \caption{P50.}
+    % \label{fig:latency-p50-h3res-800-by-zipf}
+  \end{subfigure}
+  \vspace{0.8em}
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_latency_p95_vs_h3res_800_by_zipf.png}
+    \caption{P95.}
+    % \label{fig:latency-p95-h3res-800-by-zipf}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_latency_p99_vs_h3res_800_by_zipf.png}
+    \caption{P99.}
+    % \label{fig:latency-p99-h3res-800-by-zipf}
+  \end{subfigure}
+
+  \caption{Latency vs.\ H3 resolution at 800\,RPS, grouped by Zipf skew (medians across repetitions).}
+  \label{fig:latency-h3res-800-by-zipf}
+\end{figure}
+
 \subsubsection{Throughput, errors, and stability}
-\subsubsection{Cache hit/miss context}
+It is checked whether each configuration actually sustains the offered 800\,RPS (Figure~\ref{fig:throughput-stability-zipf-800}). Baseline is close to target across skews (throughput median $\approx$\,789.1\,RPS, i.e., $\sim$0.985–0.987 of target) with low error counts (Figure~\ref{fig:errors-zipf-800}). The $r{=}7$ cache meets target exactly (800.0\,RPS median across skews) and has very few errors (Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}). The $r{=}8$ cache is split: at low skew it sits near baseline (throughput $\sim$0.986-0.987 of target with some errors; Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}), while at higher skew (1.3–1.4) it hits the target cleanly with zero or near-zero errors (Figure~\ref{fig:errors-zipf-800}). The $r{=}9$ cache does \emph{not} sustain load (only $\sim$0.33–0.47 of target, with many errors; Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}), so its latency numbers are not directly comparable. These checks support that the baseline, $r{=}7$, and (under higher skew) $r{=}8$ comparisons are valid for latency.
+
+\begin{figure}[p]
+  \centering
+
+  \begin{subfigure}[t]{0.86\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_achieved_ratio_vs_zipf_800.png}
+    \caption{Achieved throughput / target.}
+    \label{fig:achieved-ratio-zipf-800}
+  \end{subfigure}
+  \vspace{0.8em}
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_errors_vs_zipf_800.png}
+    \caption{Errors.}
+    \label{fig:errors-zipf-800}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_missed_tokens_vs_zipf_800.png}
+    \caption{Missed tokens.}
+    % \label{fig:missed-tokens-zipf-800}
+  \end{subfigure}
+
+  \caption{Throughput and stability indicators vs.\ Zipf skew at 800\,RPS (medians across repetitions).}
+  \label{fig:throughput-stability-zipf-800}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+
+  \begin{subfigure}[t]{0.86\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_speedup_p50_vs_zipf_800.png}
+    \caption{P50.}
+    % \label{fig:speedup-p50-zipf-800}
+  \end{subfigure}
+  \vspace{0.8em}
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_speedup_p95_vs_zipf_800.png}
+    \caption{P95.}
+    \label{fig:speedup-p95-zipf-800}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_speedup_p99_vs_zipf_800.png}
+    \caption{P99.}
+    \label{fig:speedup-p99-zipf-800}
+  \end{subfigure}
+
+  \caption{Latency speedup (baseline/cache) vs.\ Zipf skew at 800\,RPS.}
+  \label{fig:latency-speedup-zipf-800}
+\end{figure}
 
 \subsection{Backend Load}
+This section focuses on resource impact at 800\,RPS (Figure~\ref{fig:backend-cpu-zipf-800}). The clearest effect is on PostGIS CPU (Figure~\ref{fig:postgis-cpu-zipf-800}). Across Zipf\_s $\in\{1.1,1.2,1.3,1.4\}$, the $r{=}7$ cache reduces median PostGIS CPU by about one order of magnitude (e.g., $\sim$59.0\%$\rightarrow$6.1\% at 1.1; $\sim$56.0\%$\rightarrow$4.4\% at 1.4; Figure~\ref{fig:postgis-cpu-zipf-800}). $r{=}8$ also offloads the database, but less so at low skew (e.g., $\sim$59.0\%$\rightarrow$21.3\% at 1.1), improving as skew increases (down to $\sim$9.3\% at 1.4; Figure~\ref{fig:postgis-cpu-zipf-800}). GeoServer CPU follows the same pattern (Figure~\ref{fig:geoserver-cpu-zipf-800}): baseline medians of $\sim$282.7--310.8\% drop to $\sim$15--26\% for $r{=}7$ and to $\sim$34--88\% for $r{=}8$, depending on skew. 
+
+Memory is more nuanced (Figure~\ref{fig:postgis-mem-zipf-800} and Figure~\ref{fig:geoserver-mem-zipf-800}). PostGIS memory changes little (Figure~\ref{fig:postgis-mem-zipf-800}), but GeoServer memory rises under caching (e.g., $\sim$1.02--1.24\,GiB baseline vs.\ $\sim$1.27--1.69\,GiB for $r{=}7$ across skews; Figure~\ref{fig:geoserver-mem-zipf-800}). This cost is the main trade-off for the CPU savings and lower latency. Finally, throughput viability supports these comparisons (Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}): baseline sustains $\sim$0.985 of target on median; $r{=}7$ is effectively at target ($\sim$0.99998); $r{=}8$ ranges from near-baseline at low skew to on-target at higher skew. The $r{=}9$ cache is not viable at 800\,RPS (under-delivers with many errors; Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}), so it is excluded from backend comparisons at this load.
+
+\begin{figure}[p]
+  \centering
+
+  \begin{subfigure}[t]{0.86\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_backend_postgis_cpu_vs_zipf_800.png}
+    \caption{PostGIS CPU utilization.}
+    \label{fig:postgis-cpu-zipf-800}
+  \end{subfigure}
+  \vspace{0.8em}
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_backend_geoserver_cpu_vs_zipf_800.png}
+    \caption{GeoServer CPU utilization.}
+    \label{fig:geoserver-cpu-zipf-800}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_backend_offload_factor_postgis_cpu_vs_zipf_800.png}
+    \caption{PostGIS CPU offload factor (baseline/cache).}
+    \label{fig:postgis-cpu-offload-factor-zipf-800}
+  \end{subfigure}
+
+  \caption{Backend CPU load and inferred database offload vs.\ Zipf skew at 800\,RPS (medians across repetitions).}
+  \label{fig:backend-cpu-zipf-800}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+
+  \begin{subfigure}[t]{0.86\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_backend_postgis_mem_vs_zipf_800.png}
+    \caption{PostGIS memory usage.}
+    \label{fig:postgis-mem-zipf-800}
+  \end{subfigure}
+  \vspace{0.8em}
+  \begin{subfigure}[t]{0.60\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_backend_geoserver_mem_vs_zipf_800.png}
+    \caption{GeoServer memory usage.}
+    \label{fig:geoserver-mem-zipf-800}
+  \end{subfigure}
+
+  \caption{Backend memory usage vs.\ Zipf skew at 800\,RPS (medians across repetitions).}
+\end{figure}
 
 \subsection{Load Sensitivity: 600 vs 800 vs 1000 RPS}
+To examine how effects scale with load, Zipf\_s{=}1.3 is fixed and baseline vs.\ cache $r{=}8$ are compared at 600/800/1000\,RPS (Figures~\ref{fig:loadsens-p50-vs-rps}--\ref{fig:loadsens-achieved-ratio-vs-rps} and Table~\ref{tab:load-sensitivity}). At 600\,RPS, baseline P50/P95/P99 are $\sim$5.16/25.8/75.7\,ms; $r{=}8$ lowers them to $\sim$2.57/16.3/32.4\,ms (about $2.0\!\times$--$1.6\!\times$--$2.3\!\times$ faster; Figure~\ref{fig:loadsens-p95-vs-rps} and Figure~\ref{fig:loadsens-p99-vs-rps}), and PostGIS CPU drops from $\sim$44.5\% to $\sim$8.9\% (Figure~\ref{fig:loadsens-postgis-cpu-vs-rps}). Both configurations meet target throughput ($\sim$1.00; Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). 
+
+At 800\,RPS, the gap widens: baseline P50/P95/P99 $\sim$5.33/29.8/85.5\,ms vs.\ $r{=}8$ at $\sim$2.74/\allowbreak17.4/35.7\,ms ($\sim 1.9\!\times$–-$1.7\!\times$–-$2.4\!\times$ faster; Figure~\ref{fig:loadsens-p95-vs-rps} and Figure~\ref{fig:loadsens-p99-vs-rps}), while PostGIS CPU falls from $\sim$57.6\% to $\sim$12.1\% (Figure~\ref{fig:loadsens-postgis-cpu-vs-rps}). The achieved/target ratio improves from $\sim$0.986 (baseline) to $\sim$0.99997 (cache; Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}), indicating better headroom. 
+
+At 1000\,RPS, baseline starts to strain: P50/P95/P99 rise to $\sim$21.33/67.6/111.3\,ms and achieved/target dips to $\sim$0.971 (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). The $r{=}8$ cache remains more stable: P50/P95/P99 $\sim$4.09/39.2/98.5\,ms and achieved/target $\sim$0.980 (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). PostGIS CPU falls from $\sim$83.2\% (baseline) to $\sim$15.0\% (cache; Figure~\ref{fig:loadsens-postgis-cpu-vs-rps}). In short, as offered load increases, the cache keeps tails in check and preserves throughput viability (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). Because $r{=}7$ already dominates at 800\,RPS, $r{=}8$ is used here to show the “middle” case: even when $r{=}8$ is not the absolute best at low skew, it still delivers growing benefits as load climbs.
+
+\begin{figure}[p]
+  \centering
+
+  \begin{subfigure}[t]{0.86\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_p50_vs_rps_zipf1p3_r8.png}
+    \caption{P50.}
+    \label{fig:loadsens-p50-vs-rps}
+  \end{subfigure}
+  \vspace{0.8em}
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_p95_vs_rps_zipf1p3_r8.png}
+    \caption{P95.}
+    \label{fig:loadsens-p95-vs-rps}
+  \end{subfigure}\hfill
+  \begin{subfigure}[t]{0.49\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_p99_vs_rps_zipf1p3_r8.png}
+    \caption{P99.}
+    \label{fig:loadsens-p99-vs-rps}
+  \end{subfigure}
+
+  \caption{Latency vs.\ offered load (RPS) at Zipf\_s=1.3 for baseline vs.\ cache ($r{=}8$).}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+
+  \begin{subfigure}[t]{0.86\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_achieved_ratio_vs_rps_zipf1p3_r8.png}
+    \caption{Achieved throughput / target.}
+    \label{fig:loadsens-achieved-ratio-vs-rps}
+  \end{subfigure}
+  \vspace{0.8em}
+  \begin{subfigure}[t]{0.60\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_postgis_cpu_vs_rps_zipf1p3_r8.png}
+    \caption{PostGIS CPU utilization.}
+    \label{fig:loadsens-postgis-cpu-vs-rps}
+  \end{subfigure}
+
+  \caption{Throughput viability and backend load vs.\ offered load (RPS) at Zipf\_s=1.3 for baseline vs.\ cache ($r{=}8$).}
+\end{figure}
+
+\begin{table}[tbp]
+  \centering
+  \caption{Load sensitivity summary for Zipf\_s=1.3 comparing baseline vs.\ cache ($r{=}8$) across 600/800/1000\,RPS.}
+  \label{tab:load-sensitivity}
+  \begingroup
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.05}
+    \begin{adjustbox}{max width=\linewidth}
+      \input{tables/results/table_load_sensitivity.tex}
+    \end{adjustbox}
+  \endgroup
+\end{table}
 
 \subsection{Summary of Findings}
+\textbf{Tail latency:} At 800\,RPS, the cache at $r{=}7$ is the clear winner across skews (Figure~\ref{fig:latency-zipf-800} and Figure~\ref{fig:latency-h3res-800-by-zipf}). Typical gains are $\sim$5$\times$ at P50, $\sim$5--6$\times$ at P95 and $\sim$7--11$\times$ at P99 versus baseline (Figures~\ref{fig:latency-speedup-zipf-800}). $r{=}8$ is mixed: worse tails than baseline at low skew (1.1--1.2), but clearly better once skew is higher (1.3--1.4; Figures~\ref{fig:latency-speedup-zipf-800}). $r{=}9$ is not viable at 800\,RPS (Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}).
+
+\textbf{Backend offload:} PostGIS CPU reductions of $\sim$10$\times$ (often more at higher skew) are routine with $r{=}7$ (Figure~\ref{fig:postgis-cpu-offload-factor-zipf-800}); $r{=}8$ improves from $\sim$3$\times$ (low skew) up to $\sim$6$\times$ (high skew; Figure~\ref{fig:postgis-cpu-offload-factor-zipf-800}). GeoServer CPU shows similar reductions (Figure~\ref{fig:geoserver-cpu-zipf-800}). GeoServer memory increases under caching (roughly +20--40\% across skews; Figure~\ref{fig:geoserver-mem-zipf-800}); PostGIS memory stays close to baseline (Figure~\ref{fig:postgis-mem-zipf-800}).
+
+\textbf{Throughput viability:} Baseline reaches $\sim$0.985 of target at 800\,RPS (Figure~\ref{fig:achieved-ratio-zipf-800}); $r{=}7$ hits the target almost exactly (Figure~\ref{fig:achieved-ratio-zipf-800}); $r{=}8$ approaches target once skew is moderate (Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}). Under higher offered load (1000\,RPS, Zipf\_s{=}1.3), the cache keeps P95/P99 markedly lower and improves achieved/target by $\sim$0.9\,pp (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}; Table~\ref{tab:load-sensitivity}).
+
+\textbf{Best configuration at 800\,RPS:} For the evaluated workload and the tested resolutions $r\in\{7,8,9\}$, $r{=}7$ is the best-performing choice (Table~\ref{tab:best-config-zipf-800}). It provides the strongest tail improvements and the largest PostGIS offload across skews (Figure~\ref{fig:speedup-p95-zipf-800}, Figure~\ref{fig:speedup-p99-zipf-800}, and Figure~\ref{fig:postgis-cpu-offload-factor-zipf-800}), at the cost of a moderate GeoServer memory increase (Figure~\ref{fig:geoserver-mem-zipf-800}). This advantage is consistent with coarser H3 bucketing increasing reuse under skewed access; however, it should not be read as a universal optimum across all resolutions, since even lower resolutions (e.g., $r{=}6$) could further increase reuse but may reduce spatial selectivity for small client footprints unless results are clipped/filtered to the exact request geometry. If memory is tight and skew is high (Zipf\_s$\geq$1.3), $r{=}8$ is an acceptable alternative with lower CPU than baseline and tails in the low-teens/low-30s\,ms (Figure~\ref{fig:latency-p95-zipf-800}, Figure~\ref{fig:latency-p99-zipf-800}, and Figure~\ref{fig:postgis-cpu-zipf-800}).
+
+\begin{table}[tbp]
+  \centering
+\caption{Best cache resolution $r$ per Zipf skew at 800\,RPS based on latency percentiles.}
+  \label{tab:best-config-zipf-800}
+  \begingroup
+    \small
+    \setlength{\tabcolsep}{5pt}
+    \renewcommand{\arraystretch}{1.05}
+    \begin{adjustbox}{max width=\linewidth}
+      \input{tables/results/table_best_config_by_zipf.tex}
+    \end{adjustbox}
+  \endgroup
+\end{table}

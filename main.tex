@@ -11,14 +11,23 @@
 \usepackage{tabularx}
 \usepackage{enumitem}
 \usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{float}
+\usepackage[section]{placeins}
+\usepackage{pdflscape}
+\usepackage{subcaption}
 \usepackage{seqsplit}
 \usepackage{csquotes}
 \usepackage[backend=biber,style=numeric]{biblatex}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{xurl}
 \usepackage{hyperref}
 \usepackage[nameinlink,capitalise]{cleveref}
 \usepackage{caption}
 \usepackage{verbatim}
 \usepackage{titlesec}
+\captionsetup{font=small}
+\captionsetup[subfigure]{font=footnotesize, skip=2pt}
 \hypersetup{
     pdftitle={Adaptive Caching of Spatial Queries in PostGIS Using H3-Based Indexing},
     pdfauthor={Mohammed Shakir},
@@ -127,7 +136,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % -                       References                       - %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
+\FloatBarrier
+\clearpage
 \printbibliography[heading=bibintoc,title={References}]
 
 \end{document}
