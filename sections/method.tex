@@ -3,7 +3,7 @@
 \subsection{Research Approach and Study Design}
 The goal is to measure how an H3-keyed middleware cache affects latency and load under skewed spatial workloads, compared to no cache. Each configuration is run with the same datasets, the same mix of query footprints (\ac{bbox} and polygons), and the same arrival pattern. Experiments are containerised and scripted so runs are repeatable.
 
-For each workload profile the configurations are cycled through, runs are repeated, and median and percentile metrics are reported across repetitions. External factors are fixed as much as possible (hardware, network, versions, etc.), warm up the system, and then collect measurements during a steady window. The \ac{sre} “golden signals” are reported and cache-specific indicators: P50/P95/P99 latency (overall, hit-path, miss-path), requests/s, error rate, saturation (CPU/memory), and hit/miss/partial-hit ratios.
+For each workload profile, configurations are cycled through, runs are repeated, and median and percentile metrics are reported across repetitions. External factors are fixed as much as possible (hardware, network, versions, etc.), The system is warmed up, and measurements are collected during a steady-state window. The \ac{sre} “golden signals” are reported and cache-specific indicators: P50/P95/P99 latency (overall, hit-path, miss-path), requests/s, error rate, saturation (CPU/memory), and hit/miss/partial-hit ratios.
 
 Independent variables are H3 resolution (7–9), decay, and freshness policy. Dependent variables are latency percentiles, PostGIS CPU, Redis memory and evictions, and staleness.
 
@@ -22,7 +22,7 @@ A stable network is assumed during testing, and no background load is assumed ex
 The middleware is a Go service that acts as an HTTP reverse proxy with spatial awareness. It parses incoming requests, maps footprints to H3 cells, looks up Redis for per-cell entries, forwards misses to GeoServer, and composes responses. A Kafka consumer listens for change events, maps updated geometries to cells, and deletes affected keys. The service exposes Prometheus metrics and health checks. Configuration is via environment variables and a simple YAML file; all components run in Docker for reproducibility.
 
 \subsubsection{End-to-End Request Flow and Component Responsibilities}
-\textbf{1. Router:} Accepts client \ac{wfs}/\ac{wms} requests, validates required parameters (service, request, typeNames, spatial filter), normalises \ac{ecql}/\ac{cql} filters, and builds an internal QueryRequest. It preserves wire compatibility with GeoServer so clients do not change their integrations.
+\textbf{1. Router:} Accepts client \ac{wfs}/\ac{wms} requests, validates required parameters (service, request, typeNames, spatial filter), normalizes \ac{ecql}/\ac{cql} filters, and builds an internal QueryRequest. It preserves wire compatibility with GeoServer so clients do not change their integrations.
 
 \textbf{2. H3 mapper:} Converts the footprint (\ac{bbox} as polygon, or user polygon) to a set of H3 cell IDs at the chosen resolution. The selection of resolution is static per run.
 
@@ -34,14 +34,14 @@ The middleware is a Go service that acts as an HTTP reverse proxy with spatial a
 
 \textbf{6. Aggregator:} Merges per-cell payloads, deduplicates features by stable identifiers, and returns a single GeoJSON response. It records keys-per-request and merge time.
 
-\textbf{7. Invalidation listener:} Subscribes to Kafka topics carrying change events. For each event, maps the changed geometry to H3 cells and issues key deletions. Processing is idempotent, and ordering is ensured within partitions.
+\textbf{7. Invalidation listener:} Subscribes to Kafka topics carrying change events. For each event, it maps the changed geometry to H3 cells and issues key deletions. Processing is idempotent, and ordering is ensured within partitions.
 
 \textbf{8. Metrics/health:} Exposes request counters, latency histograms, hit/miss ratios, Redis stats, and invalidation lag. Health endpoints return liveness/readiness for containers.
 
 \subsubsection{H3 Footprint Mapping and Request Bucketing}
-H3’s polygon-to-cells (“polygonToCells”) functions are used to map a request footprint to cell IDs \cite{H3_API_Regions}. A \ac{bbox} is treated as a polygon with four vertices. For each request, the mapper returns the set of cell IDs at resolution $r$, which become the unit of reuse and invalidation. The default polygonToCells uses a centroid-in-polygon rule \cite{H3_API_Regions}, which is simple and fast; thin shapes near boundaries can be handled by increasing $r$ or by expanding one ring and trimming on compose.
+H3’s polygon-to-cells (“polygonToCells”) functions are used to map a request footprint to cell IDs \cite{H3_API_Regions}. A \ac{bbox} is treated as a polygon with four vertices. For each request, the mapper returns the set of cell IDs at resolution $r$, which become the unit of reuse and invalidation. The default polygonToCells uses a centroid-in-polygon rule, which is simple and fast; thin shapes near boundaries can be handled by increasing $r$ or by expanding one ring and trimming on compose.
 
-Resolution controls granularity. Higher $r$ gives smaller cells, more precise coverage, and often higher hit probability for small windows, but increases keys per request. Lower $r$ reduces keys and metadata but can over-cover and reduce locality. Resolution is therefore swept with $r\in\{5,6,7,8,9,10\}$ in experiments and hit ratio, keys-per-request, and bytes-per-cell are recorded.
+Resolution controls granularity. Higher $r$ gives smaller cells, more precise coverage, and often higher hit probability for small windows, but increases keys per request. Lower $r$ reduces keys and metadata but can over-cover and reduce locality. Resolution is therefore swept with $r\in\{7,8,9\}$ in experiments, and hit ratio, keys-per-request, and bytes-per-cell are recorded.
 
 The cache key includes the cell ID and a stable hash of the attribute filter (normalised \ac{ecql}). This keeps semantically different queries isolated while enabling reuse when both footprint and filter match.
 
@@ -49,7 +49,7 @@ On composed responses the original spatial filter is reapplied to remove any fea
 
 \subsubsection{Caching in Redis: Key Schema and Result Storage}
 The cache entries are stored in Redis using a composite key:
-\texttt{<layer>:\allowbreak<srid>:\allowbreak<res>:\allowbreak<cellId>:\allowbreak<filterHash>:\allowbreak<version>}. Values are kept as Redis strings (binary-safe blobs), which allows compact, compressed payloads without concerns about encoding. Each request that spans multiple H3 cells triggers a single \texttt{MGET} for those keys to reduce round trips. \texttt{cellId} is the H3 64-bit identifier \cite{H3_Core_Indexing}, and \texttt{filterHash} fingerprints the normalised \ac{ecql}/\ac{fes} filter so semantically different queries do not collide.
+\texttt{<layer>:\allowbreak<srid>:\allowbreak<res>:\allowbreak<cellId>:\allowbreak<filterHash>:\allowbreak<version>}. Values are kept as Redis strings (binary-safe blobs), which allows compact, compressed payloads without concerns about encoding. Each request that spans multiple H3 cells triggers a single \texttt{MGET} for those keys to reduce round trips. \texttt{cellId} is the H3 64-bit identifier, and \texttt{filterHash} fingerprints the normalised \ac{ecql}/\ac{fes} filter so semantically different queries do not collide.
 
 The value layout is simple: a small header (timestamps, byte length, schema/version) and a payload. For vector responses GeoJSON Features or small, per-cell arrays of feature rows are stored. \ac{ttl} is set at write and attached per key, Redis removes expired keys automatically. Memory pressure is controlled by \texttt{maxmemory} and an eviction policy (e.g., \texttt{allkeys-lru} or \texttt{allkeys-lfu}) so the cache behaves predictably when full.
 
@@ -101,7 +101,7 @@ Each trial proceeds as follows:
 
 \begin{enumerate}
   \item Start all containers and wait for health checks to pass.
-  \item Warm up the system by running the target request for a fixed duration (e.g., 1 minutes) to stabilise caches and JIT optimisations.
+  \item Warm up the system by running the target request for a fixed duration (e.g., 1 minute) to stabilise caches and JIT optimisations.
   \item Run the load generator at the target constant arrival rate for a fixed measurement window (e.g., 4 minutes), collecting metrics during this period.
   \item Stop the load generator and export collected metrics from Prometheus and middleware logs for analysis.
   \item Restart containers to reset state before the next configuration.
