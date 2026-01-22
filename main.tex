@@ -5,27 +5,23 @@
 \usepackage{microtype}
 \usepackage{mathtools}
 \usepackage{amssymb}
+\usepackage{csquotes}
+\usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
 \usepackage{siunitx}
 \usepackage{booktabs}
-\usepackage{tabularx}
 \usepackage{enumitem}
-\usepackage{graphicx}
 \usepackage{adjustbox}
-\usepackage{float}
-\usepackage[section]{placeins}
-\usepackage{pdflscape}
+\usepackage{graphicx}
 \usepackage{subcaption}
-\usepackage{seqsplit}
-\usepackage{csquotes}
-\usepackage[backend=biber,style=numeric]{biblatex}
+\usepackage{pdflscape}
+\usepackage[section]{placeins}
+\usepackage{acro}
 \usepackage[dvipsnames]{xcolor}
 \usepackage{xurl}
 \usepackage{hyperref}
-\usepackage[nameinlink,capitalise]{cleveref}
-\usepackage{caption}
-\usepackage{verbatim}
-\usepackage{titlesec}
-\usepackage{acro}
+
+\setlength{\emergencystretch}{1.5em}
+
 \acsetup{
   list/display = used,
   pages/display = all
@@ -37,6 +33,7 @@
     pdfauthor={Mohammed Shakir},
     pdfsubject={Master Thesis},
     pdfkeywords={master thesis, PostGIS, spatial queries, H3, caching, indexing},
+    colorlinks=true,
     linkcolor=MidnightBlue,
     citecolor=RoyalBlue,
     urlcolor=RoyalBlue
@@ -47,13 +44,12 @@
   range-units           = single,
   exponent-product      = \cdot
 }
+
 % References
 \addbibresource{references.bib}
 \input{sections/acronyms-defs}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                         Title                          - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Title
 \title{Adaptive Caching of Spatial Queries in PostGIS Using H3-Based Indexing} 
 \author{
     {Mohammed Shakir} \\
@@ -71,77 +67,51 @@
 
 \maketitle
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                        Abstract                        - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Abstract
 \newpage
 \input{sections/abstract}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                    Acknowledgements                    - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Acknowledgements
 \newpage
 \input{sections/acknowledgements}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                   Table of contents                    - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Table of contents
 \newpage
 \tableofcontents
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                Abbreviations & Acronyms                - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
+% Abbreviations & Acronyms
+\clearpage
 \input{sections/acronyms}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                    Introduction                        - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
+% Introduction
+\clearpage
 \input{sections/introduction}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                    Related Work                        - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
+% Related Work
+\clearpage
 \input{sections/related_work}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                       Theory                           - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
+% Theory
+\clearpage
 \input{sections/theory}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                       Method                           - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
+% Method
+\clearpage
 \input{sections/method}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                       Results                          - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
+% Results
+\clearpage
 \input{sections/results}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                      Discussion                        - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
+% Discussion
+\clearpage
 \input{sections/discussion}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                      Conclusions                       - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage
+% Conclusions
+\clearpage
 \input{sections/conclusions}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% -                       References                       - %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\FloatBarrier
+% References
 \clearpage
 \printbibliography[heading=bibintoc,title={References}]
 

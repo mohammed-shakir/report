@@ -12,7 +12,7 @@ Validity measures include repeated trials, fixed seeds for traffic, and cross-ch
 \subsection{System Under Study and Assumptions}
 The system mirrors a common geospatial setup: GeoServer exposes \ac{wfs}/\ac{wms} endpoints backed by PostGIS, a middleware proxy sits in front and integrates Redis for caching and Kafka for change events. Prometheus scrapes metrics from services. Clients issue \ac{wfs} \texttt{GetFeature} requests with \ac{bbox} or polygon filters and optional attribute filters.
 
-Layers are published in \texttt{\ac{epsg}:4326} and responses are encoded as GeoJSON. Queries target urban layers with realistic skew, mixing small viewports (city blocks) with medium windows (districts). The cache key encodes (layer, \ac{srid}, resolution, H3 cell ID, filter hash, version). Each value has a \ac{ttl} and can be invalidated by events. Redis is configured with a bounded memory and an eviction policy \cite{Redis_Eviction}.
+Layers are published in \texttt{EPSG:4326} and responses are encoded as GeoJSON. Queries target urban layers with realistic skew, mixing small viewports (city blocks) with medium windows (districts). The cache key encodes (layer, \ac{srid}, resolution, H3 cell ID, filter hash, version). Each value has a \ac{ttl} and can be invalidated by events. Redis is configured with a bounded memory and an eviction policy \cite{Redis_Eviction}.
 
 Kafka provides in-partition ordering \cite{Kafka_Introduction}; consumers are in a single group per environment so each partition is processed by exactly one consumer. Event handling is repeat-safe so duplicate invalidations are harmless.
 
@@ -84,10 +84,10 @@ All components run in Docker on a single host laptop. Images are pinned by tag a
 Hardware was a single laptop running Arch Linux (Lenovo Legion 7 15IMH05) with an Intel Core i7-10750H (6 cores / 12 threads) and 16~GiB RAM. The experimental stack ran in Docker containers (PostGIS, GeoServer, Redis, Kafka, and monitoring). Redis was configured with a fixed memory budget using \texttt{maxmemory}=256~MiB and the \texttt{allkeys-lru} eviction policy to bound cache growth. Prometheus scraped service metrics and Grafana dashboards summarized latency distributions, throughput, error rates, and Redis memory/evictions; log-based observability was provided via Loki/Promtail.
 
 \subsubsection{Baselines and Compared Configurations}
-Four configurations are compared:
+Six configurations are compared:
 \begin{enumerate}
-  \item \textbf{Baseline with low Zipf}: No cache, requests go directly to GeoServer/PostGIS, and the distribution of calls are spread out.
-    \item \textbf{Baseline with high Zipf}: No cache, requests go directly to GeoServer/PostGIS, and the distribution of calls are compact.
+  \item \textbf{Baseline with low Zipf}: No cache, requests go directly to GeoServer/\allowbreak PostGIS, and the distribution of calls are spread out.
+    \item \textbf{Baseline with high Zipf}: No cache, requests go directly to GeoServer/\allowbreak PostGIS, and the distribution of calls are compact.
   \item \textbf{H3 cache with low H3 res and low Zipf}: per-cell keys at low H3 resolution, and the distribution of calls are spread out.
   \item \textbf{H3 cache with high H3 res and low Zipf}: per-cell keys at high H3 resolution, and the distribution of calls are spread out.
   \item \textbf{H3 cache with low H3 res and high Zipf}: per-cell keys at low H3 resolution, and the distribution of calls are compact.

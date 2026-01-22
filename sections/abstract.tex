@@ -1,5 +1,4 @@
-\section*{\centering Abstract}
-\addcontentsline{toc}{section}{Abstract}
+\begin{abstract}
 Operational web mapping stacks commonly pair GeoServer with PostGIS, yet repeated vector queries over urban hotspots recompute overlapping work, raising latency and database load. This thesis studies an adaptive cache that partitions request footprints into H3 hexagonal cells, stores per-cell results in Redis, and maintains freshness via time-to-live (\ac{ttl}) plus Kafka-driven invalidation. A Go middleware is implemented that maps \ac{bbox}/polygon filters to H3 cells, composes per-cell payloads on cache hits, deduplicates features, and reapplies the exact spatial and attribute filter.
 
 The evaluation is done in a containerized testbed under Zipf-like skew and 600--1000 \ac{rps}, measuring P50/P95/P99, throughput, and backend CPU/memory for $r\in\{7,8,9\}$ versus no cache.
@@ -7,3 +6,5 @@ The evaluation is done in a containerized testbed under Zipf-like skew and 600--
 At 800 \ac{rps}, $r=7$ yields the lowest P50/P95/P99 and reduces PostGIS CPU by roughly an order of magnitude while sustaining target throughput. $r=8$ improves as skew increases but shows heavier tails at low skew; $r=9$ is unstable on this testbed. The main cost is a moderate rise in GeoServer memory due to composition.
 
 It is concluded that H3-guided, per-cell caching complements \ac{gist}-indexed PostGIS for dynamic vector workloads. Guidance is to start at $r=7$, monitor keys-per-request and merge time, size Redis to the working set, and pair per-layer TTLs with event-driven invalidation to bound staleness while maximizing reuse.
+\end{abstract}
+\addcontentsline{toc}{section}{Abstract}

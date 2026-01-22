@@ -25,19 +25,19 @@ Finer grids ($r{=}8$ and especially $r{=}9$) increase specificity, which can hel
 Operationally, two practices were found useful. First, set TTLs per layer based on update cadence (short for frequently edited layers, longer for slowly changing base data) and monitor the fraction of responses served past the target. Second, keep invalidation idempotent and version-aware so duplicates or replays are harmless; this avoids broad purges and keeps the cache stable under churn. With those guardrails in place, the main effect of freshness tuning is a smooth trade-off: relaxing TTLs increases reuse and lowers latency until the staleness budget is hit; tightening them does the opposite.
 
 \subsection{Limitations and threats to validity}
-\subsubsection{Synthetic workload vs.\ real traffic.}
+\subsubsection{Synthetic workload vs.\ real traffic}
 The request mix and Zipf-like skew that are used in this thesis are representative but not exhaustive; real deployments may combine diverse layers or constant cycles that change hot regions over time. Results should be treated as comparative evidence (cache vs.\ baseline under the same conditions), not as universal absolutes across all catalogues and user behaviors.
 
-\subsubsection{Single-host, containerized testbed.}
+\subsubsection{Single-host, containerized testbed}
 Running all components on one machine (with Docker networking) can understate network variance that appear in multi-host clusters. Kernel scheduling and IO paths also differ between laptops and production servers.
 
-\subsubsection{Generalizability across schemas and predicates.}
+\subsubsection{Generalizability across schemas and predicates}
 The thesis focused on common spatial filters in \ac{wfs}/\ac{wms} requests. Workloads with complex attribute joins, heavy server-side processing, or very small polygons may behave differently and benefit from other H3 resolutions. Using spatial indexes in PostGIS helps, but cannot remove all of these differences.
 
-\subsubsection{Freshness and delivery guarantees.}
+\subsubsection{Freshness and delivery guarantees}
 \ac{ttl} limits how long cached data can become stale, while event-driven invalidation reduces staleness when updates happen. In practice, \ac{cdc} and messaging can be delayed or duplicated, so we rely on ordered partitions and idempotent handlers to maintain cache consistency. Systems that require strict transactional guarantees must account for the added complexity and overhead of Kafka’s exactly-once mechanisms.
 
-\subsubsection{Cache memory and eviction artifacts.}
+\subsubsection{Cache memory and eviction artifacts}
 With limited Redis memory, eviction policy affects tail latency during churn. An \emph{allkeys-LFU} or \emph{allkeys-LRU} policy generally works best, but sudden access pattern changes or wide scans can still evict useful entries. Redis documentation on eviction and latency should be kept in mind when interpreting tail-latency spikes under memory pressure.
 
 \subsection{Sustainability (Energy and efficiency)}

@@ -77,9 +77,13 @@ where $S$ measures staleness risk (e.g., fraction of responses older than a fres
 \subsubsection{Key Design for Spatial Queries}
 Cache keys define how granular and isolated cache reuse is. A composite key that captures all the information needed is used to guarantee matches with a database answer:
 \[
-\texttt{key} = \texttt{<layer>}:\texttt{<srid>}:\texttt{<resolution>}:\texttt{<cellId>}:\texttt{<filterHash>}:\texttt{<version>}.
+\begin{aligned}
+\texttt{key} &=
+\texttt{<layer>}:\texttt{<srid>}:\texttt{<resolution>}:\texttt{<cellId>}:\\
+&\quad \texttt{<filterHash>}:\texttt{<version>}.
+\end{aligned}
 \]
-Here \texttt{layer} identifies the dataset; \texttt{srid} fixes the coordinate space; \texttt{resolution}/\texttt{cellId} identify the H3 bucket; \texttt{filterHash} fingerprints the attribute condition (normalised \ac{ecql}/\ac{fes}); and \texttt{version} encodes schema/data epoch for bulk invalidation.
+Here \texttt{layer} identifies the dataset; \texttt{srid} fixes the coordinate space; \texttt{resolution}/\allowbreak\texttt{cellId} identify the H3 bucket; \texttt{filterHash} fingerprints the attribute condition (normalised \ac{ecql}/\ac{fes}); and \texttt{version} encodes schema/data epoch for bulk invalidation.
 
 This per-cell design avoids generating a large number of unique keys for complex polygons, improves reuse because nearby cells often appear in many queries, and allows targeted invalidation when upstream changes touch only a subset of cells. Larger “query keys” (entire cell-sets) can be layered on top as an optimisation for extremely frequent, identical windows, but the base unit of reuse remains the single cell.
 

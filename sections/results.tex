@@ -180,7 +180,7 @@ Memory is more nuanced (Figure~\ref{fig:postgis-mem-zipf-800} and Figure~\ref{fi
   \begin{subfigure}[t]{0.49\linewidth}
     \centering
     \includegraphics[width=\linewidth]{figures/results/fig_backend_offload_factor_postgis_cpu_vs_zipf_800.png}
-    \caption{PostGIS CPU offload factor (baseline/cache).}
+    \caption{PostGIS CPU offload factor (baseline/\allowbreak cache).}
     \label{fig:postgis-cpu-offload-factor-zipf-800}
   \end{subfigure}
 
@@ -208,12 +208,12 @@ Memory is more nuanced (Figure~\ref{fig:postgis-mem-zipf-800} and Figure~\ref{fi
   \caption{Backend memory usage vs.\ Zipf skew at 800\,\ac{rps} (medians across repetitions).}
 \end{figure}
 
-\subsection{Load Sensitivity: 600 vs 800 vs 1000 \ac{rps}}
+\subsection{Load Sensitivity: 600 vs 800 vs 1000 RPS}
 To examine how effects scale with load, Zipf\_s{=}1.3 is fixed and baseline vs.\ cache $r{=}8$ are compared at 600/800/1000\,\ac{rps} (Figures~\ref{fig:loadsens-p50-vs-rps}--\ref{fig:loadsens-achieved-ratio-vs-rps} and Table~\ref{tab:load-sensitivity}). At 600\,\ac{rps}, baseline P50/P95/P99 are $\sim$5.16/25.8/75.7\,ms; $r{=}8$ lowers them to $\sim$2.57/16.3/32.4\,ms (about $2.0\!\times$--$1.6\!\times$--$2.3\!\times$ faster; Figure~\ref{fig:loadsens-p95-vs-rps} and Figure~\ref{fig:loadsens-p99-vs-rps}), and PostGIS CPU drops from $\sim$44.5\% to $\sim$8.9\% (Figure~\ref{fig:loadsens-postgis-cpu-vs-rps}). Both configurations meet target throughput ($\sim$1.00; Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). 
 
 At 800\,\ac{rps}, the gap widens: baseline P50/P95/P99 $\sim$5.33/29.8/85.5\,ms vs.\ $r{=}8$ at $\sim$2.74/\allowbreak17.4/35.7\,ms ($\sim 1.9\!\times$–-$1.7\!\times$–-$2.4\!\times$ faster; Figure~\ref{fig:loadsens-p95-vs-rps} and Figure~\ref{fig:loadsens-p99-vs-rps}), while PostGIS CPU falls from $\sim$57.6\% to $\sim$12.1\% (Figure~\ref{fig:loadsens-postgis-cpu-vs-rps}). The achieved/target ratio improves from $\sim$0.986 (baseline) to $\sim$0.99997 (cache; Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}), indicating better headroom. 
 
-At 1000\,\ac{rps}, baseline starts to strain: P50/P95/P99 rise to $\sim$21.33/67.6/111.3\,ms and achieved/target dips to $\sim$0.971 (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). The $r{=}8$ cache remains more stable: P50/P95/P99 $\sim$4.09/39.2/98.5\,ms and achieved/target $\sim$0.980 (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). PostGIS CPU falls from $\sim$83.2\% (baseline) to $\sim$15.0\% (cache; Figure~\ref{fig:loadsens-postgis-cpu-vs-rps}). In short, as offered load increases, the cache keeps tails in check and preserves throughput viability (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). Because $r{=}7$ already dominates at 800\,\ac{rps}, $r{=}8$ is used here to show the “middle” case: even when $r{=}8$ is not the absolute best at low skew, it still delivers growing benefits as load climbs.
+At 1000\,\ac{rps}, baseline starts to strain: P50/P95/P99 rise to $\sim$21.33/67.6/\allowbreak 111.3\,\allowbreak ms and achieved/target dips to $\sim$0.971 (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). The $r{=}8$ cache remains more stable: P50/P95/P99 $\sim$4.09/39.2/98.5\,ms and achieved/target $\sim$0.980 (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). PostGIS CPU falls from $\sim$83.2\% (baseline) to $\sim$15.0\% (cache; Figure~\ref{fig:loadsens-postgis-cpu-vs-rps}). In short, as offered load increases, the cache keeps tails in check and preserves throughput viability (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}). Because $r{=}7$ already dominates at 800\,\ac{rps}, $r{=}8$ is used here to show the “middle” case: even when $r{=}8$ is not the absolute best at low skew, it still delivers growing benefits as load climbs.
 
 \begin{figure}[p]
   \centering
