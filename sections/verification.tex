@@ -1,5 +1,5 @@
-\section{Results}
-This chapter presents the measured effects of the middleware cache compared to the baseline service. Results are reported using latency percentiles (P50/P95/P99) alongside throughput and error counts, and backend CPU and memory measurements are also reported to explain observed performance changes. Unless stated otherwise, plots show aggregated medians across repetitions.
+\section{Verification and Validation}
+This chapter verifies the experimental setup and supports the validity of the measured performance differences between the middleware cache and the baseline service. Validation is based on end-to-end latency percentiles (P50/P95/P99), throughput and error rates (to ensure offered load is actually sustained), and backend CPU/memory measurements for GeoServer and PostGIS.
 
 \subsection{Experimental Setup}
 All test conditions are kept fixed across configurations and only vary the parameters listed in the matrices (Table~\ref{tab:experiment-parameters}). The offered load is held constant per scenario, runs follow the same warm-up and timed window procedure, and the dataset, containers, and seeds are identical between configurations. Median values are computed across repeated runs per configuration. The number of repetitions and achieved throughput per run are listed in the overview table (Table~\ref{tab:800-summary}). 
@@ -143,13 +143,13 @@ It is checked whether each configuration actually sustains the offered 800\,\ac{
     \centering
     \includegraphics[width=\linewidth]{figures/results/fig_speedup_p95_vs_zipf_800.png}
     \caption{P95.}
-    \label{fig:speedup-p95-zipf-800}
+    % \label{fig:speedup-p95-zipf-800}
   \end{subfigure}\hfill
   \begin{subfigure}[t]{0.49\linewidth}
     \centering
     \includegraphics[width=\linewidth]{figures/results/fig_speedup_p99_vs_zipf_800.png}
     \caption{P99.}
-    \label{fig:speedup-p99-zipf-800}
+    % \label{fig:speedup-p99-zipf-800}
   \end{subfigure}
 
   \caption{Latency speedup (baseline/cache) vs.\ Zipf skew at 800\,\ac{rps}.}
@@ -181,7 +181,7 @@ Memory is more nuanced (Figure~\ref{fig:postgis-mem-zipf-800} and Figure~\ref{fi
     \centering
     \includegraphics[width=\linewidth]{figures/results/fig_backend_offload_factor_postgis_cpu_vs_zipf_800.png}
     \caption{PostGIS CPU offload factor (baseline/\allowbreak cache).}
-    \label{fig:postgis-cpu-offload-factor-zipf-800}
+    % \label{fig:postgis-cpu-offload-factor-zipf-800}
   \end{subfigure}
 
   \caption{Backend CPU load and inferred database offload vs.\ Zipf skew at 800\,\ac{rps} (medians across repetitions).}
@@ -275,19 +275,19 @@ At 1000\,\ac{rps}, baseline starts to strain: P50/P95/P99 rise to $\sim$21.33/67
   \endgroup
 \end{table}
 
-\subsection{Summary of Findings}
-\textbf{Tail latency:} At 800\,\ac{rps}, the cache at $r{=}7$ is the clear winner across skews (Figure~\ref{fig:latency-zipf-800} and Figure~\ref{fig:latency-h3res-800-by-zipf}). Typical gains are $\sim$5$\times$ at P50, $\sim$5--6$\times$ at P95, and $\sim$7--11$\times$ at P99 versus baseline (Figure~\ref{fig:latency-speedup-zipf-800}). $r{=}8$ is mixed: worse tails than baseline at low skew (1.1--1.2), but clearly better once skew is higher (1.3--1.4; Figures~\ref{fig:latency-speedup-zipf-800}). $r{=}9$ is not viable at 800\,\ac{rps} (Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}).
+\subsection{Verification and validation summary}
+This chapter verifies that the reported performance differences are measured under comparable and stable conditions, and validates that the observed effects are interpretable.
 
-\textbf{Backend offload:} PostGIS CPU reductions of $\sim$10$\times$ (often more at higher skew) are routine with $r{=}7$ (Figure~\ref{fig:postgis-cpu-offload-factor-zipf-800}); $r{=}8$ improves from $\sim$3$\times$ (low skew) up to $\sim$6$\times$ (high skew; Figure~\ref{fig:postgis-cpu-offload-factor-zipf-800}). GeoServer CPU shows similar reductions (Figure~\ref{fig:geoserver-cpu-zipf-800}). GeoServer memory increases under caching (roughly +20--40\% across skews; Figure~\ref{fig:geoserver-mem-zipf-800}); PostGIS memory stays close to baseline (Figure~\ref{fig:postgis-mem-zipf-800}).
+\textbf{Controlled conditions:} All configurations are executed with the same dataset, fixed seeds, pinned container images, identical warm-up and measurement windows, and only the parameters in Table~\ref{tab:experiment-parameters} are varied. Reported metrics are medians across repetitions, with repetitions and achieved throughput per run listed in Table~\ref{tab:800-summary}.
 
-\textbf{Throughput viability:} Baseline reaches $\sim$0.985 of target at 800\,\ac{rps} (Figure~\ref{fig:achieved-ratio-zipf-800}); $r{=}7$ hits the target almost exactly (Figure~\ref{fig:achieved-ratio-zipf-800}); $r{=}8$ approaches target once skew is moderate (Figure~\ref{fig:achieved-ratio-zipf-800} and Figure~\ref{fig:errors-zipf-800}). Under higher offered load (1000\,\ac{rps}, Zipf\_s{=}1.3), the cache keeps P95/P99 markedly lower and improves achieved/target by $\sim$0.9\,pp (Figure~\ref{fig:loadsens-p95-vs-rps}, Figure~\ref{fig:loadsens-p99-vs-rps}, and Figure~\ref{fig:loadsens-achieved-ratio-vs-rps}; Table~\ref{tab:load-sensitivity}).
+\textbf{Offered-load viability:} Comparisons are emphasized only when the system sustains the offered load with acceptable error rates. Baseline, $r{=}7$, and (for moderate/high skew) $r{=}8$ maintain throughput close to the 800\,\ac{rps} target, while $r{=}9$ under-delivers and produces many errors at 800\,\ac{rps}, so its latency percentiles are not treated as comparable at that load (Figure~\ref{fig:throughput-stability-zipf-800}).
 
-\textbf{Best configuration at 800\,RPS:} For the evaluated workload and the tested resolutions $r\in\{7,8,9\}$, $r{=}7$ is the best-performing choice (Table~\ref{tab:best-config-zipf-800}). It provides the strongest tail improvements and the largest PostGIS offload across skews (Figure~\ref{fig:speedup-p95-zipf-800}, Figure~\ref{fig:speedup-p99-zipf-800}, and Figure~\ref{fig:postgis-cpu-offload-factor-zipf-800}), at the cost of a moderate GeoServer memory increase (Figure~\ref{fig:geoserver-mem-zipf-800}). This advantage is consistent with coarser H3 bucketing increasing reuse under skewed access; however, it should not be read as a universal optimum across all resolutions, since even lower resolutions (e.g., $r{=}6$) could further increase reuse but may reduce spatial selectivity for small client footprints unless results are clipped/filtered to the exact request geometry. If memory is tight and skew is high (Zipf\_s$\geq$1.3), $r{=}8$ is an acceptable alternative with lower CPU than baseline and tails in the low-teens/low-30s\,ms (Figure~\ref{fig:latency-p95-zipf-800}, Figure~\ref{fig:latency-p99-zipf-800}, and Figure~\ref{fig:postgis-cpu-zipf-800}).
+\textbf{Interpretability of effects:} Latency changes are interpreted together with backend CPU/memory to ensure improvements correspond to reduced backend work rather than measurement artifacts or instability. The load sweep at Zipf $s{=}1.3$ further checks that observed behavior is consistent as offered load increases (Table~\ref{tab:load-sensitivity}).
 
 \begin{table}[tbp]
   \centering
 \caption{Best cache resolution $r$ per Zipf skew at 800\,\ac{rps} based on latency percentiles.}
-  \label{tab:best-config-zipf-800}
+  % \label{tab:best-config-zipf-800}
   \begingroup
     \small
     \setlength{\tabcolsep}{5pt}

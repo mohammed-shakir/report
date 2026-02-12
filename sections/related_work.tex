@@ -22,4 +22,20 @@ Keeping cached results fresh is not easy when data and query scopes are spatial.
 H3 is a hierarchical, global grid of hexagonal cells. Its properties include near-uniform area per resolution, consistent adjacency, and a clean hierarchical relation between resolutions that make it attractive for bucketing and composing spatial answers \cite{H3docs}. Empirical reports outside pure research also suggest that hexagons reduce visual and aggregation artifacts compared to rectangular geohashes for many analytics tasks \cite{Drapier2024_H3}. For our use case, H3 gives a compact key that is independent of the programming language (suitable for Redis), deterministic up/down-sampling across resolutions for composition, and a natural way to map data change events to affected cells for invalidation.
 
 \subsection{Gap analysis}
-To the best of current knowledge, none of the above combines, in a single end-to-end system, real-time, \emph{schema agnostic} hotspot detection external to the database via H3 bucketing over arbitrary \ac{wfs}/\ac{wms} requests, \emph{adaptive} caching of vector query results at the middleware layer with measured trade-offs across grid resolutions, and \emph{event-driven} freshness via streaming updates (Kafka) that target exactly the overlapping H3 cells. \emph{Index and cache} systems either pre-compute specific analytics (GeoBlocks, STASH), focus on client-centric prediction (\ac{sac}), or discuss standards-compliant caching without fine-grained spatial invalidation (Vecstra). This thesis fills that gap by implementing and evaluating an H3-keyed Redis cache between GeoServer and PostGIS, and by quantifying how resolution, hit ratio, memory footprint, and invalidation policy interact under skewed workloads.
+The surveyed literature provides several of the building blocks needed for hotspot-heavy vector workloads, but it tends to address them in isolation. Grid/index systems such as GeoBlocks and ACT focus on accelerating specific query classes or pre-aggregation and do not present a middleware cache for standards-based GeoServer/PostGIS vector serving with targeted, event-driven freshness \cite{Winter2021_GeoBlocks,Kipf2020_ACT}. STASH demonstrates strong benefits from adaptive middleware caching, but targets hierarchical aggregation workloads rather than caching standards-based vector feature responses with fine-grained spatial invalidation \cite{Mitra2019_STASH}. Client-centric approaches such as SAC improve perceived responsiveness via prediction and prefetching, but operate on the client side and do not reduce server-side recomputation in the same way \cite{Liu2013_SAC}. Vecstra discusses an OGC-compliant caching architecture, but does not emphasize cell-level invalidation tied to streaming updates for only the affected spatial scopes \cite{Wang2018_Vecstra}.
+
+Against this background, this thesis contributes an end-to-end prototype and evaluation that combines a query-driven hotspot identification by bucketing arbitrary \ac{wfs}/\ac{wms} footprints into H3 cells outside the database, adaptive per-cell caching of vector query results in a middleware layer with measured trade-offs across H3 resolutions, and freshness via \ac{ttl} together with event-driven invalidation using Kafka/\ac{cdc} for the overlapping H3 cells. Table~\ref{tab:relatedwork-comparison} summarizes how these aspects relate to the closest prior work (based on the published descriptions of each system).
+
+\begin{table}[tbp]
+  \centering
+  \caption{Qualitative comparison of the closest related work against the thesis contributions. “Partial” indicates that the aspect exists but differs materially in scope (e.g., aggregates instead of vector feature responses, or invalidation without fine-grained spatial scoping).}
+  \label{tab:relatedwork-comparison}
+  \begingroup
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.15}
+    \begin{adjustbox}{max width=\linewidth}
+      \input{tables/table_relatedwork_comparison.tex}
+    \end{adjustbox}
+  \endgroup
+\end{table}

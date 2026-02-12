@@ -5,7 +5,8 @@ Operational web mapping stacks at geospatial service providers typically combine
 
 Conventional server-side caching (e.g., tile caches) mostly targets rasterized responses; it is less effective for vector queries with complex geometries, attribute filters, or dynamic layers. A better approach is to partition the query footprint into a spatial grid and reuse results for frequently accessed cells. Hexagonal hierarchical grids such as H3 provide near-uniform cell areas across resolutions, consistent neighbors, and identifiers that are convenient as cache keys and for aggregation across multiple zoom levels.
 
-A spatial cache must also stay fresh because upstream data changes. Time-to-live (\ac{ttl}) expiration gives a simple baseline, but event-driven invalidation, common in change-data-capture (\ac{cdc}) pipelines built around streaming platforms, can invalidate only the affected spatial cells when features are updated. Combining \ac{ttl} with event-driven invalidation improves freshness without discarding useful cache entries. Finally, an in-memory store such as Redis provides the fast access needed to reduce end-to-end latency on cache hits while keeping implementation complexity manageable within a middleware layer. This thesis builds on these observations to investigate an H3-keyed, Redis-backed cache between GeoServer and PostGIS, coupled with \ac{ttl} and Kafka-driven invalidation to handle freshness under skewed spatial workloads.
+A spatial cache must also stay fresh because upstream data changes. Time-to-live (\ac{ttl}) expiration gives a simple baseline, but event-driven invalidation, common in change-data-capture (\ac{cdc}) pipelines built around streaming platforms, can invalidate only the affected spatial cells when features are updated. Combining \ac{ttl} with event-driven invalidation improves freshness without discarding useful cache entries. Finally, an in-memory store such as Redis provides the fast access needed to reduce end-to-end latency on cache hits while keeping implementation complexity manageable within a middleware layer. Building on these observations, this thesis presents, implements, and evaluates a Go-based middleware cache between GeoServer and PostGIS. The middleware reduces repeated work for overlapping vector queries in hotspot regions by caching per-H3-cell results in Redis, while keeping cached data fresh using per-key \ac{ttl} expiration and Kafka-driven spatial invalidation.
+
 
 \subsection{Motivation}
 Workloads in operational web mapping services frequently show spatial skew: a small set of geographic areas attracts the majority of traffic, while large regions are queried infrequently. Recomputing overlapping vector queries in such hotspots increases latency and worsens database load even when spatial indexes are present. An H3-guided middleware cache provides three benefits: 
@@ -15,24 +16,35 @@ Workloads in operational web mapping services frequently show spatial skew: a sm
   \item Tunable trade-offs between hit ratio, memory footprint, and freshness by adjusting H3 resolution and invalidation policy.
 \end{enumerate}
 
-From a research perspective, this work bridges ideas from hierarchical spatial indexing, adaptive caching, and spatially scoped invalidation into a deployable component that complements rather than replaces existing \ac{ogc} services. The outcome should be practical recommendations on when adaptive caching is worthwhile, which resolutions to use, how to size memory, and how to integrate event-driven invalidation. The study provides an end-to-end evaluation of H3-keyed caching for dynamic vector workloads, a setting that is less well served by conventional tile caches and has few publicly documented, reproducible benchmarks.
+From a research perspective, this work bridges ideas from hierarchical spatial indexing, adaptive caching, and spatially scoped invalidation into a deployable component that complements rather than replaces existing \ac{ogc} services. The work results in an end-to-end method for evaluating when adaptive caching is worthwhile for dynamic vector workloads, how H3 resolution affects reuse and composition overhead, how to size the cache working set in Redis, and how to integrate time-based freshness (\ac{ttl}) with Kafka-driven spatial invalidation. The study also contributes a reproducible benchmark and empirical evidence for H3-keyed caching in a setting that is less well served by conventional tile caches and has few publicly documented, end-to-end evaluations.
 
 \subsection{Problem Statement}
 Modern spatial data platforms serve diverse read workloads through GeoServer and PostGIS. In practice, user traffic is highly skewed; a small set of geographic areas (e.g., city centers) receives a disproportionate share of requests, while large regions are rarely accessed. Under this skew, repeated evaluation of overlapping spatial queries increases latency, drives unnecessary CPU and I/O load in PostGIS, and may slow down downstream map rendering. Conventional tile-oriented caching helps for pre-rendered map tiles, but is less effective for dynamic vector queries, highly detailed filters, and requests that do not align with fixed tile boundaries. As a result, the platform needs a cache that adapts to \emph{where} and \emph{how often} users query, while remaining correct and fresh when data changes.
 
-The problem addressed in this thesis is to design, implement, and evaluate an \emph{adaptive, spatially aware} caching layer that sits between GeoServer and PostGIS and uses an H3 hexagonal grid to detect hotspot regions from live query traffic, cache corresponding query results in Redis for low latency reuse, and keep cache entries acceptably fresh using a combination of time-to-live (\ac{ttl}) and event-driven invalidation from Kafka. The solution must reduce end-to-end query latency and database load under skewed workloads without introducing unacceptable staleness or excessive memory overhead. The study aims not only to derive actionable guidance on grid resolution, cache sizing, and invalidation policy, but also to deliver a prototype middleware that can be deployed in real production environments.
+Thus, the main goal of this thesis is to develop, implement, and evaluate an \emph{adaptive, spatially aware} caching layer between GeoServer and PostGIS that uses an H3 hexagonal grid to capture hotspot locality, reuses query results from Redis, and maintains acceptable freshness through a combination of time-to-live (\ac{ttl}) and event-driven invalidation via Kafka. The goal is to reduce end-to-end query latency and database load under skewed workloads without introducing unacceptable staleness or excessive memory overhead.
+
+To achieve this goal, the following tasks were set:
+\begin{enumerate}[leftmargin=*]
+  \item Investigate how existing solutions handle caching and freshness for dynamic vector queries in GeoServer/PostGIS-style stacks, and derive requirements for hotspot-heavy workloads.
+  \item Design an H3-keyed caching approach for vector results, including keying, composition, and correctness safeguards for spatial/attribute filtering.
+  \item Implement a Go-based middleware prototype with Redis-backed per-cell caching and Kafka-driven spatial invalidation.
+  \item Experimentally evaluate the prototype under controlled skewed workloads, comparing latency percentiles, throughput stability, backend load, memory footprint, and freshness implications across H3 resolutions and policies.
+\end{enumerate}
 
 \subsection{Research Questions}
 To evaluate the proposed approach, this thesis investigates the following research questions:
 
 \begin{enumerate}
+  \item \textbf{Existing solutions and gap:} How do existing caching approaches for GeoServer/PostGIS-style vector services handle spatial overlap reuse and cache freshness, and what limitations remain for hotspot-heavy, dynamic vector workloads?
   \item \textbf{Effectiveness:} To what extent does H3-based adaptive caching reduce latency and offload query pressure from PostGIS compared to no caching or a simple geometry/\ac{ttl} cache baseline under skewed workloads?
   \item \textbf{Granularity:} Which H3 resolution(s) give the best balance between cache hit ratio, memory footprint, and data freshness, given uneven access to different areas?
   \item \textbf{Invalidation Policies:} What combination of time-to-live (\ac{ttl}) and event-driven invalidation (triggered by upstream data change notifications) provides acceptable staleness bounds while keeping high performance?
 \end{enumerate}
 
 \subsection{Scope}
-The thesis develops and evaluates a middleware layer between GeoServer and PostGIS that encodes request footprints as H3 cells, caches vector query results in Redis, tracks hotness, and applies \ac{ttl} and Kafka-based invalidation. This includes building a working prototype that intercepts spatial requests and serves frequently accessed regions directly from Redis. Experiments will use containerized components and synthetic, skewed workloads representative of urban hotspots. The evaluation focuses on latency percentiles, database load, hit/miss ratios, staleness bounds, and cache memory usage across H3 resolutions, with an emphasis on quantifying the trade-offs among H3 resolution, cache size, hit ratio, and freshness.
+This thesis carried out the tasks defined in the problem statement by (i) reviewing how existing GeoServer/PostGIS-style stacks approach caching and freshness for dynamic vector queries and deriving requirements for hotspot-heavy workloads, (ii) designing an H3-keyed caching method for vector results, including cache keying, multi-cell composition, and safeguards to preserve correctness under spatial and attribute filtering, (iii) implementing a Go-based middleware prototype that intercepted GeoServer requests and integrated Redis for per-cell caching together with \ac{ttl}-based expiry and Kafka/\ac{cdc}-driven spatial invalidation, and (iv) experimentally evaluating the prototype in a containerized testbed under synthetic, skewed workloads representative of urban hotspots.
+
+The evaluation quantified end-to-end latency percentiles, throughput stability and error rates, backend load (notably PostGIS and GeoServer CPU/memory), and cache behavior (reuse indicators, memory/evictions, and freshness implications) across selected H3 resolutions and freshness policies, emphasizing the trade-offs between spatial granularity, composition overhead, cache memory footprint, and bounded staleness.
 
 \subsection{Thesis Structure}
 The thesis is organized as follows:
@@ -41,7 +53,8 @@ The thesis is organized as follows:
   \item \textbf{Related Work} surveys prior research on spatial indexing, adaptive caching, and cache consistency for dynamic geodata.
   \item \textbf{Theory} introduces the theoretical background needed to understand H3 indexing, caching principles, and consistency mechanisms.
   \item \textbf{Method} describes the H3-based request bucketing, hotness tracking, cache invalidation policies, and the middleware design.
-  \item \textbf{Results} present the experimental setup and report findings across baselines and different H3 resolutions.
+  \item \textbf{Verification and Validation} reports the detailed measurements, stability checks, and backend resource evidence that supports the results.
+  \item \textbf{Result} presents the main empirical outcomes and headline numbers.
   \item \textbf{Discussion} reflects on the results, limitations, and threats to validity and includes considerations of sustainability.
   \item \textbf{Conclusions} summarize the contributions of the thesis and outline directions for future improvements and deployment.
 \end{itemize}

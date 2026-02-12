@@ -1,6 +1,6 @@
 \section{Theory}
 
-This section introduces the concepts that the middleware relies on. This includes how vector queries are expressed and scoped, why real workloads concentrate on a few 'hot' areas, and how spatial indexes in PostGIS speed up queries yet still leave room for additional caching. The aim is to establish consistent terminology and assumptions so that later design and evaluation choices (e.g., H3 cell resolution, cache keys, and freshness policies) can be clearly understood and compared.
+This section provides background theory for the design and evaluation choices made in this thesis; it does not describe an external system developed by others. It introduces the concepts that the \emph{proposed middleware cache} relies on, including how vector queries are expressed and scoped, why real workloads concentrate on a few "hot" areas, and how spatial indexes in PostGIS speed up individual queries yet still leave room for reuse through caching. The aim is to establish consistent terminology and assumptions so that later \emph{thesis contributions} (in particular the middleware design, H3 resolution choices, cache keys, and freshness policies) can be clearly understood and compared.
 
 \subsection{Conceptual Frame}
 

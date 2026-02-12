@@ -1,62 +1,78 @@
+\newlength{\figmaxheight}
+\setlength{\figmaxheight}{%
+  \dimexpr\textheight-\abovecaptionskip-\belowcaptionskip-6\baselineskip\relax
+}
+
 \section{Method}
 
+The method has two parts: (i) design and implement an H3-keyed middleware cache with Redis and Kafka-based invalidation, and (ii) evaluate it under controlled, skewed workloads. Figure~\ref{fig:method-c4} first positions the system in its docker-compose testbed context (what talks to what). Figure~\ref{fig:method-arch} then shows the concrete architecture and data flows for the read path and the update/invalidation path. Figure~\ref{fig:method-class} summarizes the middleware’s internal modules and responsibilities. Figure~\ref{fig:method-request} specifies the request-handling algorithm step-by-step in a way that can be repeated. Finally, Figure~\ref{fig:method-experiment} summarizes the experimental run procedure.
+
 \subsection{Research Approach and Study Design}
-The goal is to measure how an H3-keyed middleware cache affects latency and load under skewed spatial workloads, compared to no cache. Each configuration is run with the same datasets, the same mix of query footprints (\ac{bbox} and polygons), and the same arrival pattern. Experiments are containerised and scripted so runs are repeatable.
+The goal is to measure how an H3-keyed middleware cache affects end-to-end latency and backend load under skewed spatial workloads, compared to no cache. The evaluated data flows are shown in Figure~\ref{fig:method-arch}, and the reproducible request-handling procedure is specified in Figures~\ref{fig:method-class} and \ref{fig:method-request}. Each configuration is run with the same dataset and request list (fixed seed), and a scripted procedure is used so runs are repeatable (Figure~\ref{fig:method-experiment}).
 
-For each workload profile, configurations are cycled through, runs are repeated, and median and percentile metrics are reported across repetitions. External factors are fixed as much as possible (hardware, network, versions, etc.), The system is warmed up, and measurements are collected during a steady-state window. The \ac{sre} “golden signals” are reported and cache-specific indicators: P50/P95/P99 latency (overall, hit-path, miss-path), requests/s, error rate, saturation (CPU/memory), and hit/miss/partial-hit ratios.
+For each workload profile, configurations are cycled through, runs are repeated, and median and percentile metrics are reported across repetitions. External factors are fixed as much as possible (hardware, network, versions, dataset, and request list). The system is warmed up, and measurements are collected during a steady-state window. The \ac{sre} “golden signals” are reported alongside cache-specific indicators: P50/P95/P99 latency (overall, hit-path, miss-path), requests/s, error rate, saturation (CPU/memory), and full-hit/partial-hit/miss rates.
 
-Independent variables are H3 resolution (7–9), decay, and freshness policy. Dependent variables are latency percentiles, PostGIS CPU, Redis memory and evictions, and staleness.
+Independent variables are workload skew (Zipf\_s), offered load (\ac{rps}), H3 resolution $r$, and freshness policy (\ac{ttl} and invalidation enabled/disabled). The main comparisons in this thesis use $r\in\{7,8,9\}$. Dependent variables are latency percentiles, achieved throughput, PostGIS CPU, Redis memory/evictions, and staleness-related indicators.
 
 Validity measures include repeated trials, fixed seeds for traffic, and cross-checking results. Threats to validity are noted (dataset representativeness, synthetic vs.\ real traffic, and Docker networking differences), and the evaluation is framed as comparative rather than absolute.
 
 \subsection{System Under Study and Assumptions}
-The system mirrors a common geospatial setup: GeoServer exposes \ac{wfs}/\ac{wms} endpoints backed by PostGIS, a middleware proxy sits in front and integrates Redis for caching and Kafka for change events. Prometheus scrapes metrics from services. Clients issue \ac{wfs} \texttt{GetFeature} requests with \ac{bbox} or polygon filters and optional attribute filters.
+The evaluated stack combines standard components with a Go middleware proxy developed in this thesis. Figure~\ref{fig:method-c4} shows the docker-compose testbed at container level, and Figure~\ref{fig:method-arch} details the read-path and update/invalidation data flows. GeoServer exposes \ac{wfs}/\ac{wms} endpoints backed by PostGIS, Redis is used for per-cell caching on the read path, and Kafka/CDC events are used for spatially scoped invalidation on updates. This subsection focuses on system context and assumptions; middleware structure and request-handling behavior are specified in Section~\ref{sec:method-middleware}.
 
-Layers are published in \texttt{EPSG:4326} and responses are encoded as GeoJSON. Queries target urban layers with realistic skew, mixing small viewports (city blocks) with medium windows (districts). The cache key encodes (layer, \ac{srid}, resolution, H3 cell ID, filter hash, version). Each value has a \ac{ttl} and can be invalidated by events. Redis is configured with a bounded memory and an eviction policy \cite{Redis_Eviction}.
+Layers are published in \texttt{EPSG:4326} (unless a request specifies another \texttt{srsName}/\ac{srid}) and responses are encoded as GeoJSON. Queries target urban layers with realistic skew, mixing small viewports (city blocks) with medium windows (districts). Cache entries are keyed per H3 cell using a composite key schema (defined in Section~\ref{sec:method-redis-keys}); each value is stored with a per-layer \ac{ttl} and may also be invalidated by change events. Redis is configured with bounded memory and an eviction policy \cite{Redis_Eviction}.
 
 Kafka provides in-partition ordering \cite{Kafka_Introduction}; consumers are in a single group per environment so each partition is processed by exactly one consumer. Event handling is repeat-safe so duplicate invalidations are harmless.
 
 A stable network is assumed during testing, and no background load is assumed except the experiment. GeoServer/PostGIS schemas or indexes are not changed; the middleware is non-invasive and standards-compliant on the wire.
 
 \subsection{Middleware Design and Implementation}
-The middleware is a Go service that acts as an HTTP reverse proxy with spatial awareness. It parses incoming requests, maps footprints to H3 cells, looks up Redis for per-cell entries, forwards misses to GeoServer, and composes responses. A Kafka consumer listens for change events, maps updated geometries to cells, and deletes affected keys. The service exposes Prometheus metrics and health checks. Configuration is via environment variables and a simple YAML file; all components run in Docker for reproducibility.
+\label{sec:method-middleware}
+This subsection specifies the middleware behavior in a reproducible way. Figure~\ref{fig:method-class} defines the main middleware modules and responsibilities, and Figure~\ref{fig:method-request} specifies the request-handling algorithm step-by-step. Deployment details (containers, versions, and hardware) are described in Section~\ref{sec:method-testbed}.
 
 \subsubsection{End-to-End Request Flow and Component Responsibilities}
-\textbf{1. Router:} Accepts client \ac{wfs}/\ac{wms} requests, validates required parameters (service, request, typeNames, spatial filter), normalizes \ac{ecql}/\ac{cql} filters, and builds an internal QueryRequest. It preserves wire compatibility with GeoServer so clients do not change their integrations.
 
-\textbf{2. H3 mapper:} Converts the footprint (\ac{bbox} as polygon, or user polygon) to a set of H3 cell IDs at the chosen resolution. The selection of resolution is static per run.
-
-\textbf{3. Decision and hotness:} Updates per-cell counters (exponential decay). Cells above threshold are eligible for caching; others pass through without admission to reduce turnover. This keeps memory focused on regions with reuse.
-
-\textbf{4. Cache manager:} Builds composite keys (layer/\ac{srid}/res/cell/filter-hash/version), performs a single MGET to Redis, and classifies the request as full hit, partial hit, or miss. Values are stored with \ac{ttl}. Redis is configured with an eviction policy suitable for caches and a fixed maxmemory to force realistic trade-offs.
-
-\textbf{5. Executor:} For cells not found, constructs a \ac{wfs} \texttt{GetFeature} URL and forwards to GeoServer. The result is parsed, stored per-cell (with \ac{ttl}), and streamed to the aggregator.
-
-\textbf{6. Aggregator:} Merges per-cell payloads, deduplicates features by stable identifiers, and returns a single GeoJSON response. It records keys-per-request and merge time.
-
-\textbf{7. Invalidation listener:} Subscribes to Kafka topics carrying change events. For each event, it maps the changed geometry to H3 cells and issues key deletions. Processing is idempotent, and ordering is ensured within partitions.
-
-\textbf{8. Metrics/health:} Exposes request counters, latency histograms, hit/miss ratios, Redis stats, and invalidation lag. Health endpoints return liveness/readiness for containers.
+Figure~\ref{fig:method-request} summarizes the read-path algorithm. For clarity and repeatability, the middleware handles each incoming \ac{wfs} \texttt{GetFeature} request as follows:
+\begin{enumerate}
+  \item Parse and validate required parameters (\texttt{service}, \texttt{request}, \texttt{typeNames}, and spatial filter); build an internal \texttt{QueryRequest}.
+  \item Extract the spatial footprint (\ac{bbox} or polygon) and the attribute filter (if present).
+  \item Normalize the attribute filter (Section~\ref{sec:method-redis-keys}) and compute \texttt{filterHash}.
+  \item Map the footprint to an H3 cell set at resolution $r$ (Section~\ref{sec:method-h3-mapping}).
+  \item Update per-cell hotness counters (exponential decay) and derive the cache-eligible subset $E$ of cells for this request. If $E=\emptyset$, bypass the cache and forward the request to GeoServer (counted as a miss/bypass for metrics); otherwise continue with $E$.
+  \item Build per-cell Redis keys for $E$ and issue a single \texttt{MGET} for all keys.
+  \item Classify the request over $E$ as a \emph{full hit}, \emph{partial hit}, or \emph{miss}:
+    \begin{itemize}
+      \item \textbf{Full hit:} all entries for cells in $E$ are present; proceed to composition.
+      \item \textbf{Partial hit/miss:} for each missing cell in $E$, forward a \ac{wfs} \texttt{GetFeature} request to GeoServer (which queries PostGIS) and store the returned per-cell result in Redis with \ac{ttl}.
+    \end{itemize}
+    Cells not in $E$ are always fetched from GeoServer for this request and are not admitted to Redis.
+  \item Compose the response by merging per-cell payloads (from cache and/or origin), deduplicating features, and reapplying the exact spatial and attribute filters (Section~\ref{sec:method-compose-correctness}).
+  \item Return a GeoJSON \texttt{FeatureCollection} and record metrics (latency, keys-per-request, merge time, and hit class).
+\end{enumerate}
 
 \subsubsection{H3 Footprint Mapping and Request Bucketing}
-H3’s polygon-to-cells (“polygonToCells”) functions are used to map a request footprint to cell IDs \cite{H3_API_Regions}. A \ac{bbox} is treated as a polygon with four vertices. For each request, the mapper returns the set of cell IDs at resolution $r$, which become the unit of reuse and invalidation. The default polygonToCells uses a centroid-in-polygon rule, which is simple and fast; thin shapes near boundaries can be handled by increasing $r$ or by expanding one ring and trimming on compose.
+\label{sec:method-h3-mapping}
+H3’s polygon-to-cells (“polygonToCells”) functions are used to map a request footprint to cell IDs \cite{H3_API_Regions}. A \ac{bbox} is converted into a polygon using its four corners in request coordinate order, and user polygons are used directly (including holes when present). For each request, the mapper returns the set of H3 cell IDs at resolution $r$, which become the unit of reuse and invalidation. The default polygonToCells rule includes a cell if its centroid lies within the footprint; to avoid boundary artefacts at coarser $r$, the composed response is trimmed by reapplying the exact request filters (Section~\ref{sec:method-compose-correctness}).
 
-Resolution controls granularity. Higher $r$ gives smaller cells, more precise coverage, and often higher hit probability for small windows, but increases keys per request. Lower $r$ reduces keys and metadata but can over-cover and reduce locality. Resolution is therefore swept with $r\in\{7,8,9\}$ in experiments, and hit ratio, keys-per-request, and bytes-per-cell are recorded.
+Resolution controls granularity. Higher $r$ yields smaller cells and more precise coverage but increases keys-per-request and composition overhead; lower $r$ reduces key churn but may over-cover the footprint near boundaries. The main experiments compare $r\in\{7,8,9\}$.
 
 The cache key includes the cell ID and a stable hash of the attribute filter (normalised \ac{ecql}). This keeps semantically different queries isolated while enabling reuse when both footprint and filter match.
 
 On composed responses the original spatial filter is reapplied to remove any features picked up by boundary cells. Multi-polygons are supported by passing outer and inner rings to the polyfill. All cell operations are deterministic so repeated queries map to the same key set.
 
 \subsubsection{Caching in Redis: Key Schema and Result Storage}
-The cache entries are stored in Redis using a composite key:
-\texttt{<layer>:\allowbreak<srid>:\allowbreak<res>:\allowbreak<cellId>:\allowbreak<filterHash>:\allowbreak<version>}. Values are kept as Redis strings (binary-safe blobs), which allows compact, compressed payloads without concerns about encoding. Each request that spans multiple H3 cells triggers a single \texttt{MGET} for those keys to reduce round trips. \texttt{cellId} is the H3 64-bit identifier, and \texttt{filterHash} fingerprints the normalised \ac{ecql}/\ac{fes} filter so semantically different queries do not collide.
+\label{sec:method-redis-keys}
+The cache entries are stored in Redis using a per-cell composite key:
+\texttt{<layer>:\allowbreak<srid>:\allowbreak<res>:\allowbreak<cellId>:\allowbreak<filterHash>:\allowbreak<version>}. Each request that spans multiple H3 cells triggers a single \texttt{MGET} for those keys to reduce round trips. \texttt{cellId} is the H3 64-bit identifier. \texttt{filterHash} is computed as \texttt{SHA-256} over a normalized attribute-filter string: URL-decoded, whitespace-collapsed, and with a canonical empty value \texttt{<no-filter>} when no attribute filter is present. \texttt{version} is a deployment-controlled epoch used for bulk invalidation (e.g., schema/data epoch), so changing it invalidates all existing keys without scanning.
 
 The value layout is simple: a small header (timestamps, byte length, schema/version) and a payload. For vector responses GeoJSON Features or small, per-cell arrays of feature rows are stored. \ac{ttl} is set at write and attached per key, Redis removes expired keys automatically. Memory pressure is controlled by \texttt{maxmemory} and an eviction policy (e.g., \texttt{allkeys-lru} or \texttt{allkeys-lfu}) so the cache behaves predictably when full.
 
 \subsubsection{Response Composition and Correctness Safeguards}
-The aggregator merges per-cell payloads into one \texttt{FeatureCollection}. De-duplication is performed by a stable feature identifier (primary key) that is also exposed as the GeoJSON \texttt{id} when possible; this avoids duplicates when neighbouring cells overlap. After merging, the original attribute and spatial filter are reapplied so the final result matches what PostGIS would have returned for the exact footprint. In practice exact geometry checks (e.g., \texttt{ST\_Intersects}/\texttt{ST\_Within}) are applied on the composed set to trim any over-coverage from boundary cells.
+\label{sec:method-compose-correctness}
+The aggregator merges per-cell payloads into one GeoJSON \texttt{FeatureCollection}. To make composition reproducible, de-duplication uses a stable per-feature identifier with the following precedence: (i) GeoJSON \texttt{id} if present, else (ii) a configured per-layer primary-key property (e.g., \texttt{properties.<pk>}), else (iii) a deterministic fallback \texttt{SHA-256} over canonicalized geometry+properties. If none of these identifiers can be produced (unexpected/invalid payload), the middleware falls back to the miss path for correctness.
 
-Partial failures are also guarded against. If some cells miss or expire while others hit, the middleware fetches the missing ones from GeoServer and only returns once the full set is assembled. Latencies and correctness counters are tagged by “full-hit/partial/miss” so the impact in P50/P95/P99 can be inspected and post-filtering can be verified to keep answers faithful to the original query.
+After merging, the middleware reapplies the \emph{exact} request filters to the composed set: the same attribute predicate used to compute \texttt{filterHash} and the same spatial predicate implied by the request footprint (e.g., \ac{bbox} or polygon). Features failing either predicate are removed before returning, which trims over-coverage introduced by cell boundaries. If a request contains an unsupported/unknown predicate that cannot be evaluated safely in the middleware, the request is treated as a miss and forwarded to GeoServer.
+
+Partial hits are handled by fetching all missing cells from GeoServer before composing. Metrics are tagged by hit class (full hit/partial hit/miss) and include latency, keys-per-request, and merge time to support verification and debugging.
 
 \subsection{Freshness Mechanisms}
 \ac{ttl}-based freshness is combined with event-driven invalidation. \ac{ttl} gives a clear freshness lifetime (fresh vs.\ stale) that is easy to reason about and measure. Event-driven invalidation reacts to actual data changes and targets only the overlapping H3 cells, keeping hot regions up to date without broad purges.
@@ -71,40 +87,67 @@ To cut staleness after updates, change events are consumed from PostgreSQL. The 
 
 Kafka’s ordering within a partition is relied on: by partitioning events on a stable key (e.g., feature ID), all changes for the same feature arrive in order. Delivery is at-least-once by default \cite{Kafka_4_1_Design}, so the invalidation handler is \emph{idempotent} and \emph{version-aware} (drops events that have already been processed at an equal or newer source \ac{lsn}). Where a stricter pipeline is needed, Kafka’s idempotent producers and transactions can be used to enable exactly-once processing, with added operational cost. These guarantees keep invalidation consistent even during retries or restarts.
 
-For spatial targeting the H3 cells touched by the changed geometry are computed using the standard polygon-to-cells functions, then keys for those \texttt{<layer,res,cellId,filterHash>} combinations are deleted. This ties freshness directly to spatial overlap while keeping runtime costs low.
+For spatial targeting, the middleware takes the changed geometry from the CDC event ("after" geometry for inserts/updates; "before" geometry for deletes when available), maps it to H3 cell IDs at the cached resolution(s), and invalidates all cached entries for each affected cell. Because \texttt{filterHash} varies by query, invalidation is performed by deleting all keys that share the prefix \texttt{<layer>:<srid>:<res>:<cellId>:} (i.e., any \texttt{filterHash} under that cell), using a \texttt{SCAN MATCH} + batched \texttt{DEL} strategy. This ties freshness directly to spatial overlap while ensuring that any cached query result for the affected cell is removed.
 
 \subsection{Experimental Methodology}
-The experiments compare an H3-keyed middleware cache against baselines under controlled, repeatable conditions. Each run follows a fixed script: container start, warm-up, timed measurement window, and teardown. Image tags and record digests are pinned to keep versions stable across repetitions. Load is driven by scripted scenarios at a fixed arrival rate so that request mix and intensity are identical between configurations. Runs are repeated multiple times, and then aggregate medians and percentiles across repetitions.
+The experiments compare the baseline stack against the cached stack under controlled, repeatable conditions using the run procedure in Figure~\ref{fig:method-experiment}. Each run follows the same stages (start containers $\rightarrow$ health checks $\rightarrow$ warm-up $\rightarrow$ steady-state measurement window $\rightarrow$ export metrics $\rightarrow$ reset state). Image tags/digests are pinned, and the request list and random seeds are fixed so the request mix is identical between configurations. Between runs, containers are restarted to clear Redis/PostGIS/GeoServer state and avoid cross-run contamination.
 
-Measurements are taken only during a steady window after warm-up. Latency (P50/P95/P99), hit/miss rates, and backend load (PostGIS CPU, Redis memory/evictions) are collected. External factors are kept stable: hardware, container limits, network, and dataset. The study is comparative rather than absolute, so the study does not claim universal latency numbers, but it does quantify deltas between configurations under the same workload. Threats to validity (synthetic traffic, single-node deployments, and Docker networking) are noted, and they are mitigated by repeating trials with fixed seeds.
+Measurements are taken only during the steady-state measurement window after warm-up (Figure~\ref{fig:method-experiment}). Collected metrics include latency (P50/P95/P99), achieved throughput, hit class rates (full/partial/miss), and backend resource usage (PostGIS CPU, GeoServer CPU/memory, Redis memory/evictions). External factors are kept stable (hardware, container limits, dataset, versions, and request list), so results are interpreted comparatively as deltas between configurations rather than universal absolute numbers.
 
 \subsubsection{Testbed and Deployment (Containers, Versions, Hardware)}
+\label{sec:method-testbed}
 All components run in Docker on a single host laptop. Images are pinned by tag and the exact image digest is recorded in the repository. The stack includes: GeoServer (\ac{wfs}/\ac{wms}), PostgreSQL, PostGIS, Redis, the middleware proxy, Kafka, Prometheus, Grafana, Loki, and Promtail. Each service is launched via a compose file. The dataset is loaded once at startup, and containers are restarted between configurations to reset caches.
 
 Hardware was a single laptop running Arch Linux (Lenovo Legion 7 15IMH05) with an Intel Core i7-10750H (6 cores / 12 threads) and 16~GiB RAM. The experimental stack ran in Docker containers (PostGIS, GeoServer, Redis, Kafka, and monitoring). Redis was configured with a fixed memory budget using \texttt{maxmemory}=256~MiB and the \texttt{allkeys-lru} eviction policy to bound cache growth. Prometheus scraped service metrics and Grafana dashboards summarized latency distributions, throughput, error rates, and Redis memory/evictions; log-based observability was provided via Loki/Promtail.
 
 \subsubsection{Baselines and Compared Configurations}
-Six configurations are compared:
-\begin{enumerate}
-  \item \textbf{Baseline with low Zipf}: No cache, requests go directly to GeoServer/\allowbreak PostGIS, and the distribution of calls are spread out.
-    \item \textbf{Baseline with high Zipf}: No cache, requests go directly to GeoServer/\allowbreak PostGIS, and the distribution of calls are compact.
-  \item \textbf{H3 cache with low H3 res and low Zipf}: per-cell keys at low H3 resolution, and the distribution of calls are spread out.
-  \item \textbf{H3 cache with high H3 res and low Zipf}: per-cell keys at high H3 resolution, and the distribution of calls are spread out.
-  \item \textbf{H3 cache with low H3 res and high Zipf}: per-cell keys at low H3 resolution, and the distribution of calls are compact.
-  \item \textbf{H3 cache with high H3 res and high Zipf}: per-cell keys at high H3 resolution, and the distribution of calls are compact.
-\end{enumerate}
-
-For H3 resolutions $r\in\{5,6,7,8,9,10\}$ are used to study hit ratio, memory, speed, and correctness. For each configuration the same dataset, arrival pattern, and container limits are kept. End-to-end latency (P50/P95/P99), misses avoided, Redis memory/evictions, and staleness (fraction of responses older than target) are reported.
+Configurations are defined by the factor grid \{cache on/off\} $\times$ \{Zipf\_s (skew)\} $\times$ \{offered load (\ac{rps})\} $\times$ \{H3 resolution $r$\}. The main comparisons in this thesis evaluate baseline (cache off) versus cache on with $r\in\{7,8,9\}$ across the reported Zipf\_s settings. For each configuration, the same dataset, request list (fixed seed), and container limits are used. Reported outcomes include end-to-end latency (P50/P95/P99), achieved throughput, backend resource usage, Redis memory/evictions, and (where enabled) freshness-related indicators.
 
 \subsubsection{Experiment Procedure}
 Each trial proceeds as follows:
 
 \begin{enumerate}
   \item Start all containers and wait for health checks to pass.
-  \item Warm up the system by running the target request for a fixed duration (e.g., 1 minute) to stabilise caches and JIT optimisations.
-  \item Run the load generator at the target constant arrival rate for a fixed measurement window (e.g., 4 minutes), collecting metrics during this period.
-  \item Stop the load generator and export collected metrics from Prometheus and middleware logs for analysis.
-  \item Restart containers to reset state before the next configuration.
+  \item Warm up for 1 minute (not measured) using the same request list as the measurement phase.
+  \item Run the load generator at a constant arrival rate for a 4-minute steady-state measurement window, collecting metrics during this period.
+  \item Stop the load generator and export metrics from Prometheus and middleware logs for analysis.
+  \item Restart containers to reset state (Redis contents, database buffers, and service caches) before the next run/configuration.
 \end{enumerate}
 
-Repeat this procedure for each configuration and workload, ensuring that each run uses the same request list and arrival pattern. Each configuration is repeated multiple times (e.g., 5 times) to account for variability, and median/percentile metrics are computed across runs.
+This procedure corresponds to Figure~\ref{fig:method-experiment}. For each configuration, the request list and random seed are held fixed, and the configuration is repeated $n$ times (e.g., $n{=}5$) to account for variability; medians and percentiles are then aggregated across repetitions.
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/system_architecture.png}
+  \caption{System architecture and data flows for the read path (WFS GetFeature) and the update/invalidation path.}
+  \label{fig:method-arch}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/request_handling.png}
+  \caption{Step-by-step request handling in the middleware (parse $\rightarrow$ H3 mapping $\rightarrow$ Redis lookup $\rightarrow$ hit/miss handling $\rightarrow$ compose/dedup/filter $\rightarrow$ return).}
+  \label{fig:method-request}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/experimental_run.png}
+  \caption{Experimental run procedure per configuration: warm-up (not measured), steady-state measurement window, export of metrics, reset, and repetition across configurations.}
+  \label{fig:method-experiment}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/c4_diagram.png}
+  \caption{C4 container view of the docker-compose testbed: client queries the middleware; the middleware fetches from GeoServer/PostGIS on misses, caches in Redis, and consumes invalidation events from Kafka produced by an external publisher.}
+  \label{fig:method-c4}
+\end{figure}
+
+\begin{figure}[p]
+  \captionsetup{justification=raggedright,singlelinecheck=false}
+  \centering
+  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/internal_structure.png}
+  \caption{Middleware class/module diagram showing the request entrypoint (\texttt{router.HandleQuery}), cache engine (\texttt{cache.Engine}), H3 mapping, Redis-backed cell index and feature store, composition pipeline, adaptive decision components, and the Kafka invalidation runner.}
+  \label{fig:method-class}
+\end{figure}

@@ -2,6 +2,11 @@
 
 \subsection{Answers to the research questions}
 
+\subsubsection{RQ0: Existing solutions and gap}
+Existing caching approaches in GeoServer/PostGIS-style vector services either focus on raster tiles, cache only identical full requests, or rely on database indexing and buffering. These options do not reliably capture reuse when queries overlap but are not identical, and freshness under updates often leads to coarse invalidation. The gap is thus a practical, standards-compatible solution that exploits overlap reuse at a stable spatial unit while keeping staleness bounded.
+
+The H3-keyed, per-cell middleware cache proposed here fills this gap by enabling composition across overlapping \ac{bbox}/polygon queries and by pairing \ac{ttl} with Kafka/\ac{cdc}-driven spatial invalidation to invalidate only the affected H3 cells.
+
 \subsubsection{RQ1: Effectiveness}
 The H3-based cache improves responsiveness and reduces backend load under skewed access. At 800\,\ac{rps}, the best configuration ($r{=}7$) consistently lowered P50/P95/P99 compared to baseline, with the largest gains in the tails. The effect strengthened as skew increased, because more requests overlapped in the same cells and were served from memory. This also showed up as a clear PostGIS CPU offload (roughly an order of magnitude in the median plots), and better achieved/target throughput at high load. The main cost was a moderate increase in GeoServer memory, which is acceptable given the latency and offload benefits.
 
