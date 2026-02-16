@@ -6,6 +6,7 @@
 \usepackage{mathtools}
 \usepackage{amssymb}
 \usepackage{csquotes}
+\usepackage{titlesec}
 \usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
 \usepackage{siunitx}
 \usepackage{booktabs}
@@ -19,6 +20,16 @@
 \usepackage[dvipsnames]{xcolor}
 \usepackage{xurl}
 \usepackage{hyperref}
+
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+
+\titleformat{\paragraph}
+  {\normalfont\normalsize\bfseries}
+  {\theparagraph}{1em}{}
+
+\titlespacing*{\paragraph}
+  {0pt}{1.0ex plus 0.2ex minus 0.2ex}{0.6ex}
 
 \setlength{\emergencystretch}{1.5em}
 
@@ -87,13 +98,9 @@
 \clearpage
 \input{sections/introduction}
 
-% Related Work
+% State of the Art
 \clearpage
-\input{sections/related_work}
-
-% Theory
-\clearpage
-\input{sections/theory}
+\input{sections/state_of_the_art}
 
 % Method
 \clearpage
