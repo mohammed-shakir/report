@@ -12,9 +12,8 @@ All test conditions are kept fixed across configurations and only vary the param
     \small
     \setlength{\tabcolsep}{4pt}
     \renewcommand{\arraystretch}{1.05}
-    \begin{adjustbox}{max width=\linewidth}
-      \input{tables/results/table_experiment_parameters.tex}
-    \end{adjustbox}
+    \tagpdfsetup{table/header-rows={1}}
+    \input{tables/results/table_experiment_parameters.tex}
   \endgroup
 \end{table}
 
@@ -28,9 +27,8 @@ All test conditions are kept fixed across configurations and only vary the param
   \begingroup
     \setlength{\tabcolsep}{3pt}
     \renewcommand{\arraystretch}{1.05}
-    \begin{adjustbox}{max width=\linewidth}
-      \input{tables/results/table_800_summary.tex}
-    \end{adjustbox}
+    \tagpdfsetup{table/header-rows={1}}
+    \input{tables/results/table_800_summary.tex}
   \endgroup
 \end{table}
 \end{landscape}
@@ -45,25 +43,36 @@ Figure~\ref{fig:latency-zipf-800} summarizes how skew (Zipf\_s) changes latency 
 \begin{figure}[p]
   \centering
 
-  \begin{subfigure}[t]{0.86\linewidth}
+  \begin{minipage}[t]{0.86\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_latency_p50_vs_zipf_800.png}
-    \caption{P50.}
-    % \label{fig:latency-p50-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P50 end-to-end latency versus Zipf skew at 800 requests per second for baseline and cache configurations. The cache at H3 resolution 7 remains lowest across all skews.}
+    ]{figures/results/fig_latency_p50_vs_zipf_800.png}
+
+    \small (a) P50.
+  \end{minipage}
+
   \vspace{0.8em}
-  \begin{subfigure}[t]{0.49\linewidth}
+
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_latency_p95_vs_zipf_800.png}
-    \caption{P95.}
-    \label{fig:latency-p95-zipf-800}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.49\linewidth}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P95 end-to-end latency versus Zipf skew at 800 requests per second for baseline and cache configurations.}
+    ]{figures/results/fig_latency_p95_vs_zipf_800.png}
+
+    \small (b) P95.\phantomsection\label{fig:latency-p95-zipf-800}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_latency_p99_vs_zipf_800.png}
-    \caption{P99.}
-    \label{fig:latency-p99-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P99 end-to-end latency versus Zipf skew at 800 requests per second for baseline and cache configurations. The cache at H3 resolution 9 shows much higher tail latency.}
+    ]{figures/results/fig_latency_p99_vs_zipf_800.png}
+
+    \small (c) P99.\phantomsection\label{fig:latency-p99-zipf-800}
+  \end{minipage}
 
   \caption{End-to-end latency vs.\ Zipf skew at 800\,\ac{rps} (medians across repetitions).}
   \label{fig:latency-zipf-800}
@@ -75,25 +84,36 @@ At 800\,\ac{rps}, resolution matters (Figure~\ref{fig:latency-h3res-800-by-zipf}
 \begin{figure}[p]
   \centering
 
-  \begin{subfigure}[t]{0.86\linewidth}
+  \begin{minipage}[t]{0.86\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_latency_p50_vs_h3res_800_by_zipf.png}
-    \caption{P50.}
-    % \label{fig:latency-p50-h3res-800-by-zipf}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P50 latency versus H3 resolution at 800 requests per second, grouped by Zipf skew. Resolution 7 is lowest across skews.}
+    ]{figures/results/fig_latency_p50_vs_h3res_800_by_zipf.png}
+
+    \small (a) P50.
+  \end{minipage}
+
   \vspace{0.8em}
-  \begin{subfigure}[t]{0.49\linewidth}
+
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_latency_p95_vs_h3res_800_by_zipf.png}
-    \caption{P95.}
-    % \label{fig:latency-p95-h3res-800-by-zipf}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.49\linewidth}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P95 latency versus H3 resolution at 800 requests per second, grouped by Zipf skew.}
+    ]{figures/results/fig_latency_p95_vs_h3res_800_by_zipf.png}
+
+    \small (b) P95.
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_latency_p99_vs_h3res_800_by_zipf.png}
-    \caption{P99.}
-    % \label{fig:latency-p99-h3res-800-by-zipf}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P99 latency versus H3 resolution at 800 requests per second, grouped by Zipf skew. Resolution 9 performs worst.}
+    ]{figures/results/fig_latency_p99_vs_h3res_800_by_zipf.png}
+
+    \small (c) P99.
+  \end{minipage}
 
   \caption{Latency vs.\ H3 resolution at 800\,\ac{rps}, grouped by Zipf skew (medians across repetitions).}
   \label{fig:latency-h3res-800-by-zipf}
@@ -105,25 +125,36 @@ It is checked whether each configuration actually sustains the offered 800\,\ac{
 \begin{figure}[p]
   \centering
 
-  \begin{subfigure}[t]{0.86\linewidth}
+  \begin{minipage}[t]{0.86\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_achieved_ratio_vs_zipf_800.png}
-    \caption{Achieved throughput / target.}
-    \label{fig:achieved-ratio-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of achieved throughput divided by target throughput versus Zipf skew at 800 requests per second for baseline and cache configurations.}
+    ]{figures/results/fig_achieved_ratio_vs_zipf_800.png}
+
+    \small (a) Achieved throughput / target.\phantomsection\label{fig:achieved-ratio-zipf-800}
+  \end{minipage}
+
   \vspace{0.8em}
-  \begin{subfigure}[t]{0.49\linewidth}
+
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_errors_vs_zipf_800.png}
-    \caption{Errors.}
-    \label{fig:errors-zipf-800}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.49\linewidth}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of error counts versus Zipf skew at 800 requests per second for baseline and cache configurations.}
+    ]{figures/results/fig_errors_vs_zipf_800.png}
+
+    \small (b) Errors.\phantomsection\label{fig:errors-zipf-800}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_missed_tokens_vs_zipf_800.png}
-    \caption{Missed tokens.}
-    % \label{fig:missed-tokens-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of missed tokens versus Zipf skew at 800 requests per second for baseline and cache configurations.}
+    ]{figures/results/fig_missed_tokens_vs_zipf_800.png}
+
+    \small (c) Missed tokens.
+  \end{minipage}
 
   \caption{Throughput and stability indicators vs.\ Zipf skew at 800\,\ac{rps} (medians across repetitions).}
   \label{fig:throughput-stability-zipf-800}
@@ -132,25 +163,36 @@ It is checked whether each configuration actually sustains the offered 800\,\ac{
 \begin{figure}[p]
   \centering
 
-  \begin{subfigure}[t]{0.86\linewidth}
+  \begin{minipage}[t]{0.86\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_speedup_p50_vs_zipf_800.png}
-    \caption{P50.}
-    % \label{fig:speedup-p50-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P50 latency speedup, defined as baseline divided by cache latency, versus Zipf skew at 800 requests per second.}
+    ]{figures/results/fig_speedup_p50_vs_zipf_800.png}
+
+    \small (a) P50.
+  \end{minipage}
+
   \vspace{0.8em}
-  \begin{subfigure}[t]{0.49\linewidth}
+
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_speedup_p95_vs_zipf_800.png}
-    \caption{P95.}
-    % \label{fig:speedup-p95-zipf-800}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.49\linewidth}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P95 latency speedup, defined as baseline divided by cache latency, versus Zipf skew at 800 requests per second.}
+    ]{figures/results/fig_speedup_p95_vs_zipf_800.png}
+
+    \small (b) P95.
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_speedup_p99_vs_zipf_800.png}
-    \caption{P99.}
-    % \label{fig:speedup-p99-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P99 latency speedup, defined as baseline divided by cache latency, versus Zipf skew at 800 requests per second.}
+    ]{figures/results/fig_speedup_p99_vs_zipf_800.png}
+
+    \small (c) P99.
+  \end{minipage}
 
   \caption{Latency speedup (baseline/cache) vs.\ Zipf skew at 800\,\ac{rps}.}
   \label{fig:latency-speedup-zipf-800}
@@ -164,25 +206,36 @@ Memory is more nuanced (Figure~\ref{fig:postgis-mem-zipf-800} and Figure~\ref{fi
 \begin{figure}[p]
   \centering
 
-  \begin{subfigure}[t]{0.86\linewidth}
+  \begin{minipage}[t]{0.86\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_backend_postgis_cpu_vs_zipf_800.png}
-    \caption{PostGIS CPU utilization.}
-    \label{fig:postgis-cpu-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of PostGIS CPU utilization versus Zipf skew at 800 requests per second for baseline and cache configurations.}
+    ]{figures/results/fig_backend_postgis_cpu_vs_zipf_800.png}
+
+    \small (a) PostGIS CPU utilization.\phantomsection\label{fig:postgis-cpu-zipf-800}
+  \end{minipage}
+
   \vspace{0.8em}
-  \begin{subfigure}[t]{0.49\linewidth}
+
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_backend_geoserver_cpu_vs_zipf_800.png}
-    \caption{GeoServer CPU utilization.}
-    \label{fig:geoserver-cpu-zipf-800}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.49\linewidth}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of GeoServer CPU utilization versus Zipf skew at 800 requests per second for baseline and cache configurations.}
+    ]{figures/results/fig_backend_geoserver_cpu_vs_zipf_800.png}
+
+    \small (b) GeoServer CPU utilization.\phantomsection\label{fig:geoserver-cpu-zipf-800}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_backend_offload_factor_postgis_cpu_vs_zipf_800.png}
-    \caption{PostGIS CPU offload factor (baseline/\allowbreak cache).}
-    % \label{fig:postgis-cpu-offload-factor-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of PostGIS CPU offload factor, defined as baseline divided by cache CPU utilization, versus Zipf skew at 800 requests per second.}
+    ]{figures/results/fig_backend_offload_factor_postgis_cpu_vs_zipf_800.png}
+
+    \small (c) PostGIS CPU offload factor (baseline/cache).
+  \end{minipage}
 
   \caption{Backend CPU load and inferred database offload vs.\ Zipf skew at 800\,\ac{rps} (medians across repetitions).}
   \label{fig:backend-cpu-zipf-800}
@@ -191,19 +244,27 @@ Memory is more nuanced (Figure~\ref{fig:postgis-mem-zipf-800} and Figure~\ref{fi
 \begin{figure}[p]
   \centering
 
-  \begin{subfigure}[t]{0.86\linewidth}
+  \begin{minipage}[t]{0.86\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_backend_postgis_mem_vs_zipf_800.png}
-    \caption{PostGIS memory usage.}
-    \label{fig:postgis-mem-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of PostGIS memory usage versus Zipf skew at 800 requests per second for baseline and cache configurations.}
+    ]{figures/results/fig_backend_postgis_mem_vs_zipf_800.png}
+
+    \small (a) PostGIS memory usage.\phantomsection\label{fig:postgis-mem-zipf-800}
+  \end{minipage}
+
   \vspace{0.8em}
-  \begin{subfigure}[t]{0.60\linewidth}
+
+  \begin{minipage}[t]{0.60\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_backend_geoserver_mem_vs_zipf_800.png}
-    \caption{GeoServer memory usage.}
-    \label{fig:geoserver-mem-zipf-800}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of GeoServer memory usage versus Zipf skew at 800 requests per second for baseline and cache configurations.}
+    ]{figures/results/fig_backend_geoserver_mem_vs_zipf_800.png}
+
+    \small (b) GeoServer memory usage.\phantomsection\label{fig:geoserver-mem-zipf-800}
+  \end{minipage}
 
   \caption{Backend memory usage vs.\ Zipf skew at 800\,\ac{rps} (medians across repetitions).}
 \end{figure}
@@ -218,25 +279,36 @@ At 1000\,\ac{rps}, baseline starts to strain: P50/P95/P99 rise to $\sim$21.33/67
 \begin{figure}[p]
   \centering
 
-  \begin{subfigure}[t]{0.86\linewidth}
+  \begin{minipage}[t]{0.86\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_p50_vs_rps_zipf1p3_r8.png}
-    \caption{P50.}
-    \label{fig:loadsens-p50-vs-rps}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P50 latency versus offered load at Zipf s equals 1.3 for baseline and cache at H3 resolution 8.}
+    ]{figures/results/fig_loadsens_p50_vs_rps_zipf1p3_r8.png}
+
+    \small (a) P50.\phantomsection\label{fig:loadsens-p50-vs-rps}
+  \end{minipage}
+
   \vspace{0.8em}
-  \begin{subfigure}[t]{0.49\linewidth}
+
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_p95_vs_rps_zipf1p3_r8.png}
-    \caption{P95.}
-    \label{fig:loadsens-p95-vs-rps}
-  \end{subfigure}\hfill
-  \begin{subfigure}[t]{0.49\linewidth}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P95 latency versus offered load at Zipf s equals 1.3 for baseline and cache at H3 resolution 8.}
+    ]{figures/results/fig_loadsens_p95_vs_rps_zipf1p3_r8.png}
+
+    \small (b) P95.\phantomsection\label{fig:loadsens-p95-vs-rps}
+  \end{minipage}\hfill
+  \begin{minipage}[t]{0.49\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_p99_vs_rps_zipf1p3_r8.png}
-    \caption{P99.}
-    \label{fig:loadsens-p99-vs-rps}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of P99 latency versus offered load at Zipf s equals 1.3 for baseline and cache at H3 resolution 8.}
+    ]{figures/results/fig_loadsens_p99_vs_rps_zipf1p3_r8.png}
+
+    \small (c) P99.\phantomsection\label{fig:loadsens-p99-vs-rps}
+  \end{minipage}
 
   \caption{Latency vs.\ offered load (\ac{rps}) at Zipf\_s=1.3 for baseline vs.\ cache ($r{=}8$).}
 \end{figure}
@@ -244,19 +316,27 @@ At 1000\,\ac{rps}, baseline starts to strain: P50/P95/P99 rise to $\sim$21.33/67
 \begin{figure}[p]
   \centering
 
-  \begin{subfigure}[t]{0.86\linewidth}
+  \begin{minipage}[t]{0.86\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_achieved_ratio_vs_rps_zipf1p3_r8.png}
-    \caption{Achieved throughput / target.}
-    \label{fig:loadsens-achieved-ratio-vs-rps}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of achieved throughput divided by target throughput versus offered load at Zipf s equals 1.3 for baseline and cache at H3 resolution 8.}
+    ]{figures/results/fig_loadsens_achieved_ratio_vs_rps_zipf1p3_r8.png}
+
+    \small (a) Achieved throughput / target.\phantomsection\label{fig:loadsens-achieved-ratio-vs-rps}
+  \end{minipage}
+
   \vspace{0.8em}
-  \begin{subfigure}[t]{0.60\linewidth}
+
+  \begin{minipage}[t]{0.60\linewidth}
     \centering
-    \includegraphics[width=\linewidth]{figures/results/fig_loadsens_postgis_cpu_vs_rps_zipf1p3_r8.png}
-    \caption{PostGIS CPU utilization.}
-    \label{fig:loadsens-postgis-cpu-vs-rps}
-  \end{subfigure}
+    \includegraphics[
+      width=\linewidth,
+      alt={Line chart of PostGIS CPU utilization versus offered load at Zipf s equals 1.3 for baseline and cache at H3 resolution 8.}
+    ]{figures/results/fig_loadsens_postgis_cpu_vs_rps_zipf1p3_r8.png}
+
+    \small (b) PostGIS CPU utilization.\phantomsection\label{fig:loadsens-postgis-cpu-vs-rps}
+  \end{minipage}
 
   \caption{Throughput viability and backend load vs.\ offered load (\ac{rps}) at Zipf\_s=1.3 for baseline vs.\ cache ($r{=}8$).}
 \end{figure}
@@ -269,6 +349,7 @@ At 1000\,\ac{rps}, baseline starts to strain: P50/P95/P99 rise to $\sim$21.33/67
     \small
     \setlength{\tabcolsep}{4pt}
     \renewcommand{\arraystretch}{1.05}
+    \tagpdfsetup{table/header-rows={1}}
     \begin{adjustbox}{max width=\linewidth}
       \input{tables/results/table_load_sensitivity.tex}
     \end{adjustbox}
@@ -286,12 +367,13 @@ This chapter verifies that the reported performance differences are measured und
 
 \begin{table}[tbp]
   \centering
-\caption{Best cache resolution $r$ per Zipf skew at 800\,\ac{rps} based on latency percentiles.}
+  \caption{Best cache resolution $r$ per Zipf skew at 800\,\ac{rps} based on latency percentiles.}
   % \label{tab:best-config-zipf-800}
   \begingroup
     \small
     \setlength{\tabcolsep}{5pt}
     \renewcommand{\arraystretch}{1.05}
+    \tagpdfsetup{table/header-rows={1}}
     \begin{adjustbox}{max width=\linewidth}
       \input{tables/results/table_best_config_by_zipf.tex}
     \end{adjustbox}

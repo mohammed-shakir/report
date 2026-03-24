@@ -24,7 +24,7 @@ Modern spatial data platforms serve diverse read workloads through GeoServer and
 Thus, the main goal of this thesis is to develop, implement, and evaluate an \emph{adaptive, spatially aware} caching layer between GeoServer and PostGIS that uses an H3 hexagonal grid to capture hotspot locality, reuses query results from Redis, and maintains acceptable freshness through a combination of time-to-live (\ac{ttl}) and event-driven invalidation via Kafka. The goal is to reduce end-to-end query latency and database load under skewed workloads without introducing unacceptable staleness or excessive memory overhead.
 
 To achieve this goal, the following tasks were set:
-\begin{enumerate}[leftmargin=*]
+\begin{enumerate}
   \item Investigate how existing solutions handle caching and freshness for dynamic vector queries in GeoServer/PostGIS-style stacks, and derive requirements for hotspot-heavy workloads.
   \item Design an H3-keyed caching approach for vector results, including keying, composition, and correctness safeguards for spatial/attribute filtering.
   \item Implement a Go-based middleware prototype with Redis-backed per-cell caching and Kafka-driven spatial invalidation.

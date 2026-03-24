@@ -17,7 +17,7 @@ Resolution controls reuse vs.\ overhead. Coarser cells ($r{=}7$) grouped nearby 
 \ac{ttl} gives a clear age bound; event-driven invalidation then shortens the stale window where updates occur. Using per-layer TTLs matched to update cadence, plus idempotent, version-aware invalidation, kept popular cells hot while replacing only the regions that changed. The trade-off is smooth: longer TTLs raise reuse until a staleness budget is hit; shorter TTLs reduce reuse but tighten freshness. With this setup, the hybrid (\ac{ttl} and events) offered good latency while keeping staleness bounded for edited areas.
 
 \subsection{Contributions}
-\begin{itemize}[leftmargin=*]
+\begin{itemize}
   \item \textbf{Design and prototype.} A standards-compatible middleware that maps \ac{wfs}/\ac{wms} footprints to H3 cells, caches per-cell results in Redis, and composes responses on cache hits.
   \item \textbf{Freshness mechanism.} A hybrid scheme that combines per-key \ac{ttl} with \ac{cdc}/Kafka-driven spatial invalidation, implemented with idempotent, version-aware handlers.
   \item \textbf{Evaluation method.} A containerized, repeatable benchmark with fixed seeds and steady windows, reporting P50/P95/P99, backend CPU, memory, throughput viability, and cache stats.
@@ -26,7 +26,7 @@ Resolution controls reuse vs.\ overhead. Coarser cells ($r{=}7$) grouped nearby 
 \end{itemize}
 
 \subsection{Future work}
-\begin{itemize}[leftmargin=*]
+\begin{itemize}
   \item \textbf{Multi-resolution caching.} Use both coarse and fine H3 cells at the same time: coarse cells for short traffic bursts and fine cells for frequently accessed small areas, and choose which one to serve per request.
   \item \textbf{Cache admission and eviction.} Study simpler admission and replacement strategies that reduce cache churn during sudden workload changes, while still prioritising frequently accessed regions.
   \item \textbf{Whole-query caching.} Add optional cache entries for very common, identical bounding boxes or polygons to avoid splitting and recombining results on hot paths.

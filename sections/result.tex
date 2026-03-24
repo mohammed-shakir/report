@@ -1,7 +1,7 @@
 \section{Result}
 In the work, the following results were produced:
 
-\begin{enumerate}[leftmargin=*]
+\begin{enumerate}
   \item Existing solutions for caching and freshness in GeoServer/PostGIS-style vector services were studied, and requirements were derived for hotspot-heavy workloads. The main finding is that common solutions work well for raster tiles or identical repeated requests, but they reuse poorly when vector queries only partially overlap, and freshness handling often becomes either coarse (invalidate too much) or slow (serve stale data too long).
 
   \item Based on these requirements, an H3-keyed caching approach for vector results was designed, including cache keys, multi-cell composition, and correctness safeguards. The design enables reuse across overlapping requests by caching per H3 cell and then composing responses while reapplying the original spatial and attribute filters to keep results correct. In the evaluation, this approach reduced end-to-end latency and lowered PostGIS work under skew compared to the no-cache baseline.

@@ -118,36 +118,60 @@ This procedure corresponds to Figure~\ref{fig:method-experiment}. For each confi
 
 \begin{figure}[p]
   \centering
-  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/system_architecture.png}
+  \includegraphics[
+    width=\linewidth,
+    height=\figmaxheight,
+    keepaspectratio,
+    alt={Architecture diagram showing the middleware read path and update or invalidation path between client, middleware, GeoServer, PostGIS, Redis, and Kafka.}
+  ]{figures/diagrams/system_architecture.png}
   \caption{System architecture and data flows for the read path (WFS GetFeature) and the update/invalidation path.}
   \label{fig:method-arch}
 \end{figure}
 
 \begin{figure}[p]
   \centering
-  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/request_handling.png}
+  \includegraphics[
+    width=\linewidth,
+    height=\figmaxheight,
+    keepaspectratio,
+    alt={Flow diagram of middleware request handling: parse request, map footprint to H3 cells, query Redis, handle hits or misses, compose and deduplicate results, reapply filters, and return the response.}
+  ]{figures/diagrams/request_handling.png}
   \caption{Step-by-step request handling in the middleware (parse $\rightarrow$ H3 mapping $\rightarrow$ Redis lookup $\rightarrow$ hit/miss handling $\rightarrow$ compose/dedup/filter $\rightarrow$ return).}
   \label{fig:method-request}
 \end{figure}
 
 \begin{figure}[p]
   \centering
-  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/experimental_run.png}
+  \includegraphics[
+    width=\linewidth,
+    height=\figmaxheight,
+    keepaspectratio,
+    alt={Flow diagram of the experimental procedure showing warm-up, steady-state measurement, export of metrics, reset of state, and repetition across configurations.}
+  ]{figures/diagrams/experimental_run.png}
   \caption{Experimental run procedure per configuration: warm-up (not measured), steady-state measurement window, export of metrics, reset, and repetition across configurations.}
   \label{fig:method-experiment}
 \end{figure}
 
 \begin{figure}[p]
   \centering
-  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/c4_diagram.png}
+  \includegraphics[
+    width=\linewidth,
+    height=\figmaxheight,
+    keepaspectratio,
+    alt={C4 container diagram of the docker-compose testbed showing the client, middleware, GeoServer, PostGIS, Redis, and Kafka, and the main query and invalidation flows between them.}
+  ]{figures/diagrams/c4_diagram.png}
   \caption{C4 container view of the docker-compose testbed: client queries the middleware; the middleware fetches from GeoServer/PostGIS on misses, caches in Redis, and consumes invalidation events from Kafka produced by an external publisher.}
   \label{fig:method-c4}
 \end{figure}
 
 \begin{figure}[p]
-  \captionsetup{justification=raggedright,singlelinecheck=false}
   \centering
-  \includegraphics[width=\linewidth,height=\figmaxheight,keepaspectratio]{figures/diagrams/internal_structure.png}
+  \includegraphics[
+    width=\linewidth,
+    height=\figmaxheight,
+    keepaspectratio,
+    alt={Module diagram of the middleware showing the request entrypoint, cache engine, H3 mapping, Redis-backed cell index and feature store, composition pipeline, adaptive decision components, and the Kafka invalidation runner.}
+  ]{figures/diagrams/internal_structure.png}
   \caption{Middleware class/module diagram showing the request entrypoint (\texttt{router.HandleQuery}), cache engine (\texttt{cache.Engine}), H3 mapping, Redis-backed cell index and feature store, composition pipeline, adaptive decision components, and the Kafka invalidation runner.}
   \label{fig:method-class}
 \end{figure}
